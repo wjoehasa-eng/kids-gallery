@@ -1,7 +1,7 @@
 /* 가족 미술관 — 서비스 워커 v2.1.0
    앱 껍데기(HTML·아이콘·매니페스트)만 캐시합니다.
    구글 시트(.../exec)·드라이브 사진은 항상 네트워크에서 받아 최신 상태를 봅니다. */
-const CACHE = 'kids-gallery-v2.1.0';
+const CACHE = 'kids-gallery-v2.1.1';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
