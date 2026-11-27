@@ -1,0 +1,2822 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>우리 가족 미술관</title>
+<meta name="theme-color" content="#FBF3E8" />
+<meta name="description" content="아이들의 작품을 모아 두고 가족이 함께 걸어 다니며 보는 작은 미술관 — 큰 사진 앨범으로 어른도 편하게" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<style>
+  /* ────────────────────────────── 기본 ────────────────────────────── */
+  :root{
+    --ink:#2F2721; --ink2:#7C6B5E; --ink3:#A08C7C;
+    --line:rgba(84,58,40,.12);
+    --accent:#C0765A; --accent-d:#A85F45; --accent-soft:#FBEAE1;
+    --panel:rgba(255,252,247,.88);
+    --shadow:0 8px 24px rgba(96,64,44,.10),0 2px 6px rgba(96,64,44,.06);
+    --r:14px;
+    --font:'Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  [hidden]{display:none !important}
+  html,body{height:100%;margin:0;overflow:hidden;background:#F7ECDF;color:var(--ink);font-family:var(--font);
+    -webkit-font-smoothing:antialiased;overscroll-behavior:none}
+  button{font-family:inherit;cursor:pointer}
+  #stage{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:manipulation}
+
+  /* ────────────────────────────── UI 틀 ────────────────────────────── */
+  .ui{position:fixed;inset:0;pointer-events:none;display:flex;flex-direction:column;gap:8px;
+      padding:calc(10px + env(safe-area-inset-top)) 12px calc(10px + env(safe-area-inset-bottom))}
+  .ui > *{pointer-events:auto}
+
+  .topbar{display:flex;align-items:center;gap:10px;min-width:0}
+  .brand{display:flex;align-items:center;gap:9px;padding:7px 14px 7px 9px;border-radius:15px;
+    background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.7);min-width:0}
+  .brand .logo{width:32px;height:32px;flex:0 0 32px;border-radius:10px;background:linear-gradient(160deg,#E8B79E,#C68566);
+    display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
+  .brand .btxt{min-width:0}
+  .brand h1{font-size:14.5px;line-height:1.2;margin:0;font-weight:700;letter-spacing:-.02em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
+  .brand p{font-size:11px;line-height:1.25;margin:2px 0 0;color:var(--ink2);white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;max-width:46vw}
+  .actions{margin-left:auto;display:flex;align-items:center;gap:7px;flex:0 0 auto}
+
+  /* 누구나 바로 누를 수 있는 화면 전환 탭 (미술관 산책 / 큰 사진 앨범) */
+  .viewtabs{display:flex;gap:6px;padding:5px;border-radius:17px;background:var(--panel);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:var(--shadow);
+    border:1px solid rgba(255,255,255,.7);align-self:center;width:min(560px,100%);flex:0 0 auto}
+  .viewtabs button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border:0;
+    background:transparent;color:#5B4638;font-size:15.5px;font-weight:800;letter-spacing:-.015em;
+    padding:11px 10px;border-radius:13px;min-height:48px;transition:background .15s,color .15s,box-shadow .15s}
+  .viewtabs button .em{font-size:20px;line-height:1}
+  .viewtabs button.on{background:#A85F45;color:#fff;box-shadow:0 4px 14px rgba(150,70,44,.28)}
+  .viewtabs button:not(.on):hover{background:rgba(255,255,255,.6)}
+  .seg.halls button{padding:7px 11px;font-size:12.5px;font-weight:700}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;border:1px solid rgba(255,255,255,.75);
+    background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    color:var(--ink);font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:12px;box-shadow:var(--shadow);
+    transition:transform .12s ease,background .15s ease,opacity .15s ease;white-space:nowrap}
+  .btn:hover{background:rgba(255,255,255,.96)}
+  .btn:active{transform:scale(.97)}
+  .btn svg{width:16px;height:16px;flex:0 0 auto}
+  .btn.primary{background:linear-gradient(180deg,#D28C6C,#BE7154);color:#fff;border-color:rgba(255,255,255,.28);
+    box-shadow:0 8px 18px rgba(176,94,66,.28),0 1px 0 rgba(255,255,255,.25) inset}
+  .btn.primary:hover{background:linear-gradient(180deg,#D99674,#C47A5C)}
+  .btn.ghost{background:rgba(255,252,247,.7)}
+  .btn.danger{color:#B4462E;background:rgba(255,245,241,.92)}
+  .btn[hidden]{display:none}
+
+  .strips{display:flex;gap:8px;align-items:center;flex-wrap:nowrap;min-width:0}
+  .strips .seg{flex:0 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}
+  .strips .seg::-webkit-scrollbar{display:none}
+  .seg.floors{margin-left:auto;flex:0 0 auto}
+  .seg.floors button{flex-direction:row;gap:3px;padding:7px 9px}
+  .seg.floors .fl{font-size:11.5px}
+  .seg.floors .yr{font-size:9.5px;opacity:.7}
+  .seg{display:inline-flex;padding:3px;gap:2px;border-radius:13px;background:var(--panel);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:var(--shadow);
+    border:1px solid rgba(255,255,255,.7)}
+  .seg button{border:0;background:transparent;font-size:12px;font-weight:600;color:var(--ink2);white-space:nowrap;
+    padding:7px 10px;border-radius:10px;line-height:1.15;display:flex;flex-direction:column;align-items:center;gap:1px;
+    transition:background .15s,color .15s}
+  .seg button small{font-size:9.5px;font-weight:500;opacity:.75;letter-spacing:0}
+  .seg button.on{background:var(--accent-soft);color:var(--accent-d);box-shadow:inset 0 0 0 1px rgba(192,118,90,.22)}
+  .seg.artists button{flex-direction:row;gap:4px;padding:7px 11px}
+
+  /* 층(엘리베이터) */
+  .elevator{position:absolute;left:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:4px;
+    padding:5px;border-radius:15px;background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.7)}
+  .elevator button{border:0;background:transparent;border-radius:11px;padding:6px 2px;width:54px;color:var(--ink2);
+    display:flex;flex-direction:column;align-items:center;gap:1px;transition:background .15s,color .15s}
+  .elevator .fl{font-size:13px;font-weight:700;letter-spacing:-.02em}
+  .elevator .yr{font-size:9.5px;font-weight:600;opacity:.8}
+  .elevator button.on{background:var(--accent-soft);color:var(--accent-d);box-shadow:inset 0 0 0 1px rgba(192,118,90,.2)}
+  .elevator .addyr{margin-top:2px;border-top:1px solid var(--line);border-radius:0 0 11px 11px;padding-top:7px}
+  .elevator .addyr .fl{font-size:16px;line-height:1}
+
+  /* 하단 */
+  .bottom{margin-top:0;display:flex;align-items:flex-end;gap:8px}
+  .bottomwrap{margin-top:auto;display:flex;flex-direction:column;gap:7px;min-height:0}
+  .cast{display:flex;gap:4px;padding:5px;border-radius:16px;background:var(--panel);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.7)}
+  .cast button{border:0;background:transparent;border-radius:12px;padding:4px 6px 5px;display:flex;flex-direction:column;
+    align-items:center;gap:2px;color:var(--ink2);font-size:10px;font-weight:600;line-height:1;transition:background .15s}
+  .cast button svg{display:block}
+  .cast button.on{background:var(--accent-soft);color:var(--accent-d);box-shadow:inset 0 0 0 1px rgba(192,118,90,.24)}
+  .cast button span{max-width:44px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .padwrap{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+  .pad{display:grid;grid-template-columns:repeat(3,41px);grid-template-rows:repeat(3,41px);gap:3px;
+    padding:4px;border-radius:20px;background:rgba(255,252,247,.42);backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.6);
+    transition:opacity .2s,transform .2s}
+  .pad button{border:0;border-radius:12px;background:rgba(255,255,255,.86);color:#8A7466;font-size:14px;
+    display:grid;place-items:center;box-shadow:0 2px 6px rgba(96,64,44,.10);transition:transform .1s,background .1s}
+  .pad button:active{transform:scale(.94);background:#F6E3D8;color:var(--accent-d)}
+  .pad .up{grid-area:1/2} .pad .left{grid-area:2/1} .pad .mid{grid-area:2/2} .pad .right{grid-area:2/3} .pad .down{grid-area:3/2}
+  .pad .mid{background:rgba(255,255,255,.55);box-shadow:none;color:#B09C8D;font-size:13px}
+  .pad.collapsed{grid-template-columns:44px;grid-template-rows:44px;border-radius:22px;padding:4px}
+  .pad.collapsed button:not(.mid){display:none}
+  .pad.collapsed .mid{grid-area:1/1}
+
+  .hint{align-self:center;font-size:13px;line-height:1.35;color:#5B4638;background:rgba(255,252,247,.94);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    padding:9px 16px;border-radius:22px;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.7);
+    text-align:center;transition:opacity .5s;max-width:100%}
+  .hint b{font-weight:800;color:#96503A}
+  .hint.off{opacity:0;pointer-events:none}
+
+  .badge-viewer{position:fixed;left:50%;top:calc(8px + env(safe-area-inset-top));transform:translateX(-50%);
+    font-size:11px;font-weight:700;letter-spacing:.02em;color:#8A5A45;background:rgba(255,248,241,.94);
+    border:1px solid rgba(192,118,90,.25);padding:5px 11px;border-radius:20px;box-shadow:var(--shadow);z-index:6}
+  .badge-viewer[hidden]{display:none}
+
+
+  .syncdot{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--ink3);padding:0 6px;
+    white-space:nowrap;max-width:130px;overflow:hidden;text-overflow:ellipsis}
+  .syncdot i{width:7px;height:7px;border-radius:50%;background:#CFC0B2;display:block;flex:0 0 7px}
+  .syncdot.on i{background:#7FB287} .syncdot.wait i{background:#E0B25C} .syncdot.err i{background:#D08067}
+
+  /* 빈 방 안내 */
+  .empty{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;
+    gap:7px;padding:16px 20px;border-radius:16px;background:rgba(255,252,247,.93);backdrop-filter:blur(6px);
+    box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.8);text-align:center;max-width:260px}
+  .empty[hidden]{display:none}
+  .empty b{font-size:13.5px;font-weight:700}
+  .empty span{font-size:11.5px;color:var(--ink2);line-height:1.45}
+
+  /* 방 안 작품 띠 (좁은 화면) */
+  .roomstrip{display:none;gap:7px;overflow-x:auto;scrollbar-width:none;padding:2px;margin:0 -2px}
+  .roomstrip::-webkit-scrollbar{display:none}
+  .roomstrip .rc{flex:0 0 auto;width:74px;border:0;background:var(--panel);border-radius:12px;padding:3px 3px 4px;
+    box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.7);text-align:left}
+  .roomstrip .rc img,.roomstrip .rc .ph{width:100%;height:50px;border-radius:9px;display:block;object-fit:cover;background:#F4EAE0}
+  .ph{position:relative;background:linear-gradient(160deg,#F8E9DA,#EED9C6)}
+  .ph::after{content:"";position:absolute;inset:0;margin:auto;width:15px;height:13px;border-radius:3px;
+    border:2px solid rgba(186,146,116,.5);box-shadow:0 0 0 2px rgba(255,255,255,.35) inset}
+  .roomstrip .rc b{display:block;font-size:9.5px;font-weight:600;color:var(--ink2);white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;margin-top:3px;padding:0 2px}
+
+  /* ────────────────────────────── 모달 ────────────────────────────── */
+  .modal{position:fixed;inset:0;z-index:40;display:none;place-items:center;padding:16px;
+    background:rgba(52,36,26,.40);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+  .modal.on{display:grid}
+  .sheet{width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto;background:#FFFCF8;border-radius:22px;
+    box-shadow:0 30px 70px rgba(46,28,16,.30);position:relative;animation:pop .18s ease}
+  @keyframes pop{from{transform:translateY(8px) scale(.99);opacity:.6}to{transform:none;opacity:1}}
+  .sheet-head{display:flex;align-items:center;gap:10px;padding:16px 18px 8px}
+  .sheet-head h2{margin:0;font-size:15.5px;letter-spacing:-.02em}
+  .sheet-body{padding:8px 18px 4px;display:flex;flex-direction:column;gap:11px}
+  .sheet-foot{display:flex;gap:8px;justify-content:flex-end;padding:14px 18px 18px}
+  .x{margin-left:auto;border:0;background:rgba(245,236,227,.9);color:#8A7466;width:30px;height:30px;border-radius:50%;
+    font-size:14px;line-height:1;display:grid;place-items:center;flex:0 0 30px}
+  .x.floating{position:absolute;right:12px;top:12px;z-index:3;background:rgba(255,255,255,.92);box-shadow:var(--shadow)}
+
+  .field{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--ink2);font-weight:600}
+  .field input,.field select{border:1px solid var(--line);background:#fff;border-radius:11px;padding:10px 12px;
+    font-size:14px;font-family:inherit;color:var(--ink);font-weight:500;width:100%;outline:none;transition:border .15s,box-shadow .15s}
+  .field input:focus,.field select:focus{border-color:rgba(192,118,90,.55);box-shadow:0 0 0 3px rgba(192,118,90,.12)}
+  .field .sub{font-size:10.5px;font-weight:500;color:var(--ink3);line-height:1.4}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:460px){ .row2{grid-template-columns:1fr} }
+  .pick{display:flex;gap:6px}
+  .pick button{flex:1;border:1px solid var(--line);background:#fff;border-radius:11px;padding:9px 6px;font-size:12.5px;
+    font-weight:600;color:var(--ink2);transition:all .15s}
+  .pick button.on{background:var(--accent-soft);border-color:rgba(192,118,90,.45);color:var(--accent-d)}
+
+  .drop{display:block;border:1.5px dashed rgba(180,140,110,.45);border-radius:16px;background:
+    radial-gradient(120% 100% at 50% 0%,#FFFDF9,#FBF2E8);padding:0;overflow:hidden;position:relative;cursor:pointer}
+  .drop .in{padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center}
+  .drop .ico{width:38px;height:38px;border-radius:12px;background:#F6E4D8;color:#B97B5C;display:grid;place-items:center;
+    font-size:19px;margin-bottom:2px}
+  .drop b{font-size:13px;font-weight:700}
+  .drop span{font-size:11px;color:var(--ink2)}
+  .drop img{display:block;width:100%;max-height:280px;object-fit:contain;background:#F7EFE6}
+  .drop.hasimg .in{display:none}
+  .drop:not(.hasimg) img{display:none}
+
+  /* 작품 크게 보기 */
+  .sheet.art{padding:0;display:flex;flex-direction:column;width:min(760px,100%)}
+  .artview{position:relative;background:#F6EDE3;display:grid;place-items:center;min-height:240px;max-height:60vh;overflow:hidden}
+  .artview img{display:block;max-width:100%;max-height:60vh;object-fit:contain}
+  .artview .ph{color:#B7A392;font-size:14px;padding:40px}
+  .artnav{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;pointer-events:none;padding:0 10px}
+  .artnav button{pointer-events:auto;width:52px;height:52px;border-radius:50%;border:0;background:rgba(255,255,255,.95);
+    box-shadow:0 6px 18px rgba(70,45,28,.24);color:#5B4638;font-size:28px;line-height:1;display:grid;place-items:center;
+    transition:transform .12s,opacity .15s}
+  .artnav button:active{transform:scale(.94)}
+  .artnav button[disabled]{opacity:0;pointer-events:none}
+  .artinfo{padding:16px 20px 20px}
+  .artmeta{display:flex;align-items:center;gap:9px;font-size:13.5px;color:#5E4A3C;font-weight:700;flex-wrap:wrap}
+  .artpos{margin-left:auto;font-size:13.5px;font-weight:800;color:#7A5F4E}
+  .chip{display:inline-flex;align-items:center;gap:4px;background:var(--accent-soft);color:#96503A;
+    border-radius:20px;padding:4px 11px;font-size:12.5px;font-weight:800}
+  .artinfo h2{margin:9px 0 6px;font-size:22px;letter-spacing:-.02em;line-height:1.3;font-weight:800}
+  .artinfo p{margin:0;font-size:15px;color:#4F4137;line-height:1.6;white-space:pre-wrap}
+  .artpager{display:flex;gap:10px;margin-top:16px}
+  .artpager button{flex:1;min-height:52px;border-radius:14px;border:1px solid rgba(84,58,40,.16);background:#fff;
+    color:#3D3029;font-size:16px;font-weight:800;box-shadow:0 2px 8px rgba(96,64,44,.06);
+    transition:background .15s,transform .12s}
+  .artpager button:active{transform:scale(.985)}
+  .artpager button:disabled{opacity:.32}
+  .artacts{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap}
+  .artacts .btn{padding:10px 14px;font-size:13px}
+  .artacts .spacer{flex:1}
+
+  /* 작품 목록 */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;padding:4px 18px 18px}
+  .card{border:0;background:#fff;border-radius:14px;padding:0;overflow:hidden;text-align:left;
+    box-shadow:0 3px 10px rgba(96,64,44,.08);border:1px solid rgba(84,58,40,.06);transition:transform .12s}
+  .card:active{transform:scale(.985)}
+  .card .thumb{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:#F4EAE0}
+  .card .thumb.ph{height:auto}
+  .card .cap{padding:7px 9px 9px}
+  .card .cap b{display:block;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card .cap span{display:block;font-size:10.5px;color:var(--ink3);margin-top:2px}
+  .albumhead{display:flex;align-items:center;gap:8px;padding:2px 18px 10px;font-size:12px;color:var(--ink2)}
+  .albumhead b{color:var(--ink);font-size:13px}
+
+  /* ──────────────────────── 큰 사진 앨범 ──────────────────────── */
+  .album{display:none;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+    padding:6px 6px 28px;-webkit-overflow-scrolling:touch}
+  body.album-mode .album{display:block}
+  body.album-mode .bottomwrap,body.album-mode .elevator,body.album-mode #stage,body.album-mode .empty,
+  body.album-mode .hint,body.album-mode #halls{display:none !important}
+  .album-head{position:sticky;top:-6px;z-index:3;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    padding:10px 8px;margin-bottom:6px;background:linear-gradient(#FBF3E8 76%,rgba(251,243,232,.9));
+    border-bottom:1px solid rgba(84,58,40,.08)}
+  .album-head h2{margin:0;font-size:19px;letter-spacing:-.02em;font-weight:800}
+  .album-head .cnt{font-size:14px;color:#6B564A;font-weight:800}
+  .seg.scope{margin-left:auto}
+  .seg.scope button{font-size:14px;padding:9px 14px;border-radius:11px;min-height:42px;font-weight:800}
+  .album-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:16px;padding:4px 2px}
+  .acard{border:0;background:#fff;border-radius:20px;overflow:hidden;text-align:left;display:flex;flex-direction:column;
+    padding:0;box-shadow:0 6px 20px rgba(96,64,44,.10);border:1px solid rgba(84,58,40,.07);
+    transition:transform .12s,box-shadow .15s}
+  .acard:hover{box-shadow:0 12px 28px rgba(96,64,44,.17)}
+  .acard:active{transform:scale(.99)}
+  .acard .shot{display:block;width:100%;aspect-ratio:4/3;background:linear-gradient(160deg,#F8E9DA,#EED9C6);overflow:hidden}
+  .acard .shot img{display:block;width:100%;height:100%;object-fit:contain}
+  .acard .tx{padding:13px 16px 17px;display:flex;flex-direction:column;gap:6px}
+  .acard .tx b{font-size:19px;line-height:1.28;letter-spacing:-.02em;color:#241C17;font-weight:800}
+  .acard .tx .meta{font-size:14px;font-weight:700;color:#775C4B;line-height:1.4}
+  .acard .tx .memo{font-size:15px;line-height:1.5;color:#463A31;font-weight:500}
+  .album-empty{padding:48px 16px;text-align:center;color:#6B564A;font-size:15.5px;line-height:1.7}
+
+  /* 공유 */
+  .linkcard{display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;border:1px solid var(--line);
+    background:#fff;border-radius:14px;padding:12px 14px;transition:border .15s,background .15s}
+  .linkcard:hover{border-color:rgba(192,118,90,.45);background:#FFFBF7}
+  .linkcard b{font-size:13px;font-weight:700}
+  .linkcard span{font-size:10.5px;color:var(--ink3);word-break:break-all;line-height:1.45}
+  .muted{font-size:12px;color:var(--ink2);line-height:1.6;margin:0}
+  .muted.small{font-size:10.5px;color:var(--ink3)}
+  .sect{display:flex;flex-direction:column;gap:7px;padding-top:4px}
+  .sect > .t{font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:.04em}
+  .divider{height:1px;background:var(--line);margin:4px 0}
+
+  /* 토스트 */
+  .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translate(-50%,10px);
+    background:rgba(47,39,33,.92);color:#FFF8F1;font-size:12.5px;font-weight:500;padding:10px 16px;border-radius:22px;
+    box-shadow:0 10px 30px rgba(40,25,15,.3);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:60;
+    max-width:calc(100vw - 40px);text-align:center}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:700px){
+    .badge-viewer{display:none !important}
+    .brand h1{font-size:13.5px;max-width:34vw} .brand p{font-size:10px;max-width:34vw}
+    .brand{padding:6px 11px 6px 7px} .brand .logo{width:28px;height:28px;flex-basis:28px}
+    .btn{padding:8px 10px;font-size:11.5px} .btn svg{width:15px;height:15px}
+    .btn .lbl{display:none}
+    #btnAdd{padding:8px 11px;font-size:11.5px} #btnAdd .lbl{display:none}
+    .btn{padding:7px 9px;font-size:11.5px;border-radius:11px}
+    .actions{gap:6px}
+    #syncDot{display:none}
+    .elevator{display:none}
+    .seg button{padding:6px 8px;font-size:11.5px}
+    .cast button span{display:none} .cast button{padding:5px}
+    .ui{padding-left:8px;padding-right:8px;gap:6px}
+    .elevator{left:8px}
+    .roomstrip{display:flex}
+    .viewtabs{width:100%;border-radius:15px;padding:4px}
+    .viewtabs button{font-size:14px;min-height:44px;padding:9px 6px;gap:5px}
+    .viewtabs button .em{font-size:17px}
+    .hint{font-size:12px;padding:7px 12px;line-height:1.4}
+    /* 좁은 화면에서는 작품 보기를 화면 가득 채워 크게 보여 줍니다 */
+    #mArt{padding:0}
+    .sheet.art{width:100%;height:100%;max-height:100%;border-radius:0}
+    .artview{flex:1;max-height:none;min-height:160px}
+    .artview img{max-height:100%}
+    .artinfo{padding:13px 18px calc(16px + env(safe-area-inset-bottom))}
+    .artpager{margin-top:12px}
+    .artinfo h2{font-size:20px}
+    .artinfo p{font-size:15px}
+    .artpager button{min-height:54px;font-size:16.5px}
+    .artnav button{width:50px;height:50px}
+    .album{padding:4px 2px 22px}
+    .album-head{padding:8px 6px}
+    .album-head h2{font-size:17.5px}
+    .album-grid{grid-template-columns:1fr;gap:14px}
+    .seg.scope button{font-size:13.5px;padding:8px 12px;min-height:40px}
+    .acard .tx b{font-size:18px}
+  }
+  @media (min-width:701px){ .seg.floors{display:none} }
+  /* 넓은 화면에서는 전환 탭을 첫 줄 가운데로 올려 전시실에 높이를 더 줍니다 */
+  @media (min-width:1100px){
+    .viewtabs{position:absolute;left:50%;top:calc(10px + env(safe-area-inset-top));transform:translateX(-50%);width:430px}
+  }
+  @media (max-height:520px){ .hint{display:none} .pad{grid-template-columns:38px;grid-template-rows:38px} }
+</style>
+</head>
+<body>
+<canvas id="stage" aria-label="미술관 전시실"></canvas>
+
+<div class="ui">
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FFF6EE" stroke-width="1.9" stroke-linecap="round">
+          <rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/>
+          <path d="M4.2 17.2 9.6 12l3.1 3.1 2.4-2.2 4.6 4.2"/>
+        </svg>
+      </span>
+      <div class="btxt">
+        <h1 id="museumTitle">우리 가족 미술관</h1>
+        <p id="placeLine">1층 · 2026년 · 1실</p>
+      </div>
+    </div>
+    <div class="actions">
+      <span class="syncdot" id="syncDot" title="저장 상태"><i></i><span id="syncText">이 기기에 저장</span></span>
+      <button class="btn" id="btnAlbum" aria-label="큰 사진 앨범으로 보기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></svg>
+        <span class="lbl">앨범</span>
+      </button>
+      <button class="btn" id="btnShare" aria-label="가족에게 보여 주기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9.5 13.5a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 1 0-5.7-5.7l-1 1"/><path d="M14.5 10.5a4 4 0 0 0-5.7 0L6.2 13a4 4 0 1 0 5.7 5.7l1-1"/></svg>
+        <span class="lbl">링크</span>
+      </button>
+      <button class="btn" id="btnSettings" aria-label="설정">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.12.63.66 1.1 1.31 1.1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
+      </button>
+      <button class="btn primary" id="btnAdd">＋ <span class="lbl">작품 </span>올리기</button>
+    </div>
+  </header>
+
+  <div class="viewtabs" id="viewTabs" role="tablist" aria-label="보기 방식">
+    <button data-screen="museum" class="on" role="tab" aria-selected="true"><span class="em" aria-hidden="true">🏛️</span>미술관 산책</button>
+    <button data-screen="album" role="tab" aria-selected="false"><span class="em" aria-hidden="true">📖</span>큰 사진 앨범</button>
+  </div>
+
+  <div class="strips">
+    <div class="seg" id="rooms" role="tablist" aria-label="전시실"></div>
+    <div class="seg halls" id="halls" aria-label="전시 구역" hidden></div>
+  </div>
+  <div class="strips strips2">
+    <div class="seg artists" id="artistFilter" role="tablist" aria-label="작가"></div>
+    <div class="seg floors" id="floorChips" aria-label="층 선택"></div>
+  </div>
+
+  <nav class="elevator" id="elevator" aria-label="층 선택"></nav>
+
+  <div class="bottomwrap">
+    <div class="hint" id="hint">그림을 누르면 크게 보여요 · 어른들은 위 <b>「큰 사진 앨범」</b>을 눌러 보세요</div>
+    <div class="roomstrip" id="roomStrip" aria-label="이 방의 작품"></div>
+    <div class="bottom">
+      <div class="cast" id="cast" aria-label="관람 캐릭터"></div>
+      <div class="padwrap">
+        <div class="pad" id="pad" aria-label="이동 버튼">
+          <button class="up" data-dir="up" aria-label="앞으로">▲</button>
+          <button class="left" data-dir="left" aria-label="왼쪽">◀</button>
+          <button class="mid" id="padToggle" aria-label="이동 버튼 접기/펴기">✥</button>
+          <button class="right" data-dir="right" aria-label="오른쪽">▶</button>
+          <button class="down" data-dir="down" aria-label="뒤로">▼</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 큰 사진 앨범 (캐릭터 조종 없이 원본 사진을 큼지막하게) -->
+  <section class="album" id="albumView" aria-label="큰 사진 앨범">
+    <div class="album-head">
+      <h2>📖 큰 사진 앨범</h2>
+      <span class="cnt" id="albumCount"></span>
+      <div class="seg scope" id="albumScope" role="tablist" aria-label="앨범 범위">
+        <button data-scope="room" class="on" role="tab" aria-selected="true">이 방</button>
+        <button data-scope="all" role="tab" aria-selected="false">전체 작품</button>
+      </div>
+    </div>
+    <div class="album-grid" id="albumGrid"></div>
+  </section>
+</div>
+
+<div class="badge-viewer" id="viewerBadge" hidden>관람 전용 · 수정 잠금</div>
+
+<div class="empty" id="emptyRoom" hidden>
+  <b id="emptyTitle">이 방은 아직 비어 있어요</b>
+  <span id="emptySub">아이의 작품을 걸어 두면 여기에 나타나요.</span>
+  <button class="btn primary" id="emptyAdd">＋ 작품 올리기</button>
+</div>
+
+<!-- 작품 올리기 / 수정 -->
+<div class="modal" id="mUpload" role="dialog" aria-modal="true" aria-labelledby="upTitle">
+  <div class="sheet">
+    <div class="sheet-head"><h2 id="upTitle">작품 올리기</h2><button class="x" data-close aria-label="닫기">✕</button></div>
+    <div class="sheet-body">
+      <label class="drop" id="drop">
+        <input type="file" id="fileInput" accept="image/*" hidden />
+        <div class="in">
+          <div class="ico">＋</div>
+          <b>작품 사진을 고르거나 찍어 주세요</b>
+          <span>핸드폰에서는 카메라로 바로 찍을 수 있어요</span>
+        </div>
+        <img id="preview" alt="선택한 작품 사진" />
+      </label>
+      <div class="row2">
+        <label class="field"><span>전시 날짜</span><input type="date" id="fDate" /></label>
+        <div class="field"><span>작가</span><div class="pick" id="artistPick">
+          <button type="button" data-artist="a1">아이 1</button>
+          <button type="button" data-artist="a2">아이 2</button>
+        </div></div>
+      </div>
+      <label class="field"><span>제목</span><input type="text" id="fTitle" maxlength="60" placeholder="예: 무지개 마을" autocomplete="off" /></label>
+      <label class="field"><span>한 줄 메모 <em style="font-style:normal;opacity:.6;font-weight:500">(선택)</em></span>
+        <input type="text" id="fMemo" maxlength="120" placeholder="예: 물감으로 하늘을 칠했어요" autocomplete="off" /></label>
+      <p class="muted small" id="upNote">사진은 긴 변 1600px로 정리해 올라가요. 구글 시트를 연결하면 원본이 드라이브 폴더에 함께 저장돼요.</p>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn" data-close>취소</button>
+      <button class="btn primary" id="btnSaveArt">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 작품 크게 보기 -->
+<div class="modal" id="mArt" role="dialog" aria-modal="true" aria-label="작품 보기">
+  <div class="sheet art">
+    <button class="x floating" data-close aria-label="닫기">✕</button>
+    <div class="artview">
+      <img id="artImg" alt="" />
+      <div class="artnav"><button id="artPrev" aria-label="이전 작품">‹</button><button id="artNext" aria-label="다음 작품">›</button></div>
+    </div>
+    <div class="artinfo">
+      <div class="artmeta"><span class="chip" id="artArtist"></span><span id="artDate"></span><span class="artpos" id="artPos"></span></div>
+      <h2 id="artTitle"></h2>
+      <p id="artMemo"></p>
+      <div class="artpager">
+        <button id="artPrev2" aria-label="이전 작품">‹ 이전</button>
+        <button id="artNext2" aria-label="다음 작품">다음 ›</button>
+      </div>
+      <div class="artacts">
+        <button class="btn" id="artEdit">수정</button>
+        <button class="btn danger" id="artDel">삭제</button>
+        <span class="spacer"></span>
+        <a class="btn" id="artDrive" target="_blank" rel="noopener" hidden>드라이브 원본</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 공유 -->
+<div class="modal" id="mShare" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+  <div class="sheet">
+    <div class="sheet-head"><h2 id="shareTitle">가족에게 보여 주기</h2><button class="x" data-close aria-label="닫기">✕</button></div>
+    <div class="sheet-body">
+      <p class="muted">관람용 링크로 열면 작품을 보기만 할 수 있고, 올리기·수정·삭제가 잠깁니다. 카톡으로 가족에게 보내 보세요.</p>
+      <button class="linkcard" id="copyView"><b>관람용 링크 복사</b><span id="viewLinkText">—</span></button>
+      <button class="linkcard" id="copyEdit"><b>내 기기 편집 링크 복사</b><span id="editLinkText">—</span></button>
+      <p class="muted small">편집 링크를 아는 사람은 작품을 올리고 지울 수 있으니 나만 보관하세요.</p>
+    </div>
+    <div class="sheet-foot"><button class="btn" data-close>닫기</button></div>
+  </div>
+</div>
+
+<!-- 설정 -->
+<div class="modal" id="mSettings" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+  <div class="sheet">
+    <div class="sheet-head"><h2 id="setTitle">설정</h2><button class="x" data-close aria-label="닫기">✕</button></div>
+    <div class="sheet-body">
+      <label class="field"><span>미술관 이름</span><input type="text" id="sTitle" maxlength="40" placeholder="우리 가족 미술관" /></label>
+      <div class="row2">
+        <label class="field"><span>아이 1 표시 이름</span><input type="text" id="sArtist1" maxlength="20" placeholder="아이 1" /></label>
+        <label class="field"><span>아이 2 표시 이름</span><input type="text" id="sArtist2" maxlength="20" placeholder="아이 2" /></label>
+      </div>
+      <div class="row2">
+        <label class="field"><span>아빠 캐릭터 이름</span><input type="text" id="sDad" maxlength="20" placeholder="아빠" /></label>
+        <label class="field"><span>엄마 캐릭터 이름</span><input type="text" id="sMom" maxlength="20" placeholder="엄마" /></label>
+      </div>
+      <p class="muted small">여기 적은 이름은 이 기기와 연결된 비공개 시트에만 저장됩니다. 앱 코드에는 들어가지 않아요.</p>
+
+      <div class="divider"></div>
+      <div class="sect">
+        <div class="t">구글 시트 연결</div>
+        <label class="field"><span>웹 앱 주소 (…/exec)</span>
+          <input type="url" id="sSheet" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false" /></label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" id="btnConnect">연결하고 불러오기</button>
+          <button class="btn" id="btnDisconnect">연결 해제</button>
+        </div>
+        <p class="muted small" id="sheetState">연결하지 않으면 이 기기에만 저장됩니다.</p>
+      </div>
+
+      <div class="divider"></div>
+      <div class="sect">
+        <div class="t">백업 · 내보내기</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" id="btnExportJson">JSON 내보내기</button>
+          <button class="btn" id="btnExportCsv">CSV 내보내기</button>
+          <label class="btn" style="cursor:pointer">JSON 가져오기<input type="file" id="importInput" accept="application/json,.json" hidden /></label>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="sect" id="dangerSect">
+        <div class="t">정리</div>
+        <button class="btn danger" id="btnReset">이 기기의 기록 모두 지우기</button>
+        <button class="btn danger" id="btnDemoClear" hidden>예시 작품 끄기</button>
+        <p class="muted small">드라이브에 저장된 원본 사진은 지워지지 않습니다.</p>
+      </div>
+    </div>
+    <div class="sheet-foot"><button class="btn" data-close>닫기</button><button class="btn primary" id="btnSaveSettings">저장</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<noscript><p style="padding:24px">이 미술관은 자바스크립트가 필요합니다.</p></noscript>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   가족 미술관 (kids-gallery) v2.0.0
+   2.5D 아이소메트릭 전시실(한 방 26칸) · 층(연도)/방(분기)/관 · 작가 필터 · 관람 전용
+   큰 사진 앨범(어른용) · 캐릭터 없이 큰 카드로 보는 화면
+   개인정보 원칙: 코드·데모·테스트에는 실명/기관명/연락처/실제 시트 주소 없음.
+   실제 이름은 연결된 비공개 시트의 「설정」 탭에서 불러옵니다.
+   ══════════════════════════════════════════════════════════════════════ */
+(function () {
+'use strict';
+
+/* ─────────────────────────── 0. 상수 ─────────────────────────── */
+const APP_VERSION = '2.0.0';
+const LS_KEY = 'kids-gallery.v1';
+const LS_PREFS = 'kids-gallery.prefs';
+const THUMB_MAX_SIDE = 520;
+const THUMB_QUALITY = 0.7;
+const LOCAL_THUMB_LIMIT = 70;
+
+const DEFAULT_SETTINGS = {
+  museumTitle: '우리 가족 미술관',
+  artist1: '아이 1',
+  artist2: '아이 2',
+  dadName: '아빠',
+  momName: '엄마',
+  kid1Name: '',
+  kid2Name: ''
+};
+const ROOMS = [
+  { n: 1, label: '1~3월' },
+  { n: 2, label: '4~6월' },
+  { n: 3, label: '7~9월' },
+  { n: 4, label: '10~12월' }
+];
+/* 전시실: 널찍한 한 방(12m × 10m)에 액자 26칸 (벽 A·B 두 줄 18칸 + 가벽 8칸) */
+const VIEW = { W: 12, D: 10, H: 3.55, A: 32, B: 21, ZH: 30 };
+const PARTITIONS = [
+  { id: 'P1', axis: 'x', at: 5.6, from: 1.0, to: 6.4, h: 2.2, t: 0.18 },
+  { id: 'P2', axis: 'y', at: 7.7, from: 0.9, to: 5.7, h: 2.2, t: 0.18 }
+];
+const HIT_PAD = 7;   // 액자 클릭 영역을 화면에서 7px 더 넓혀줍니다 (어른 손가락까지 고려)
+const PEOPLE = {
+  dad:  { h: 1.78, shirt: '#6F8FB4', shirt2: '#5E7CA1', pants: '#3E4756', hair: '#2F2A28', skin: '#F2CFB3', style: 'short' },
+  mom:  { h: 1.66, shirt: '#D98C9A', shirt2: '#C67B89', pants: '#545A6B', hair: '#3B2C26', skin: '#F6D6BE', style: 'long' },
+  a1:   { h: 1.24, shirt: '#F0B94E', shirt2: '#DFA83E', pants: '#4E6FA3', hair: '#2F2A28', skin: '#F6D6BE', style: 'kid' },
+  a2:   { h: 1.08, shirt: '#7FC4A3', shirt2: '#6DB492', pants: '#8A6AA8', hair: '#2F2A28', skin: '#F6D6BE', style: 'kid' }
+};
+
+/* ─────────────────────────── 1. 작은 도구들 ─────────────────────────── */
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const pad2 = n => (n < 10 ? '0' : '') + n;
+const nowISO = () => new Date().toISOString();
+function uid() {
+  return 'k' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
+function yearOf(ds) { const y = parseInt(String(ds || '').slice(0, 4), 10); return isNaN(y) ? new Date().getFullYear() : y; }
+function monthOf(ds) { const m = parseInt(String(ds || '').slice(5, 7), 10); return isNaN(m) ? 1 : m; }
+function quarterOf(ds) { return Math.min(4, Math.max(1, Math.floor((monthOf(ds) - 1) / 3) + 1)); }
+function fmtDate(ds) {
+  const p = String(ds || '').split('-');
+  if (p.length < 3) return String(ds || '');
+  return p[0] + '. ' + parseInt(p[1], 10) + '. ' + parseInt(p[2], 10) + '.';
+}
+function shade(hex, amt) {
+  const h = hex.replace('#', '');
+  const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+  const r = clamp(((n >> 16) & 255) + amt, 0, 255);
+  const g = clamp(((n >> 8) & 255) + amt, 0, 255);
+  const b = clamp((n & 255) + amt, 0, 255);
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+function roundRect(g, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  g.beginPath();
+  g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r);
+  g.arcTo(x, y, x + w, y, r);
+  g.closePath();
+}
+function b64enc(str) {
+  // 주소(#)에 안전하도록 URL-safe base64 로 만듭니다.
+  try {
+    return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  } catch (e) { return ''; }
+}
+function b64dec(str) {
+  try {
+    let t = String(str || '').replace(/-/g, '+').replace(/_/g, '/');
+    while (t.length % 4) t += '=';
+    return decodeURIComponent(escape(atob(t)));
+  } catch (e) { return ''; }
+}
+function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+  return new Promise((res, rej) => {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta); res();
+    } catch (e) { rej(e); }
+  });
+}
+let toastTimer = 0;
+function toast(msg, ms) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('on'), ms || 2400);
+}
+
+/* ─────────────────────────── 2. 상태 ─────────────────────────── */
+const S = {
+  settings: Object.assign({}, DEFAULT_SETTINGS),
+  artworks: [],
+  character: 'dad',
+  view: { year: new Date().getFullYear(), room: 1, artist: 'all', hall: 1 },
+  sheetUrl: '',
+  mode: 'edit',
+  demo: false,
+  extraYears: [],
+  sync: 'off',
+  screen: 'museum',   // 'museum' = 미술관 산책, 'album' = 큰 사진 앨범
+  albumScope: 'room'  // 앨범 범위: 'room' = 이 방, 'all' = 전체 작품
+};
+let prefs = { pad: null, hintSeen: false };
+
+function loadLocal() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const o = JSON.parse(raw);
+      if (o && typeof o === 'object') {
+        if (o.settings) S.settings = Object.assign({}, DEFAULT_SETTINGS, o.settings);
+        if (Array.isArray(o.artworks)) S.artworks = o.artworks.filter(a => a && a.id && a.date);
+        if (o.character && PEOPLE[o.character]) S.character = o.character;
+        if (o.sheetUrl) S.sheetUrl = o.sheetUrl;
+        if (Array.isArray(o.extraYears)) S.extraYears = o.extraYears;
+        if (o.view && o.view.year) S.view = Object.assign(S.view, o.view);
+      }
+    }
+  } catch (e) { /* 깨진 저장값은 무시하고 새로 시작 */ }
+  try {
+    const p = JSON.parse(localStorage.getItem(LS_PREFS) || '{}');
+    if (p && typeof p === 'object') prefs = Object.assign(prefs, p);
+  } catch (e) {}
+}
+function savePrefs() { try { localStorage.setItem(LS_PREFS, JSON.stringify(prefs)); } catch (e) {} }
+
+function pruneThumbs(list) {
+  // 기기에 들고 있는 미리보기 사진은 최근 것만 남깁니다(원본은 드라이브에 있음).
+  const arr = (list || S.artworks).slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  arr.slice(LOCAL_THUMB_LIMIT).forEach(a => { a.thumb = ''; });
+}
+function saveLocal() {
+  if (S.mode === 'view') return;      // 관람 전용에서는 기기 데이터를 건드리지 않습니다.
+  const real = S.artworks.filter(a => !a.demo);   // 예시 작품은 실제 기록이 아니므로 저장하지 않습니다
+  pruneThumbs(real);
+  const payload = {
+    v: 1, savedAt: nowISO(), settings: S.settings, artworks: real,
+    character: S.character, sheetUrl: S.sheetUrl, extraYears: S.extraYears, view: S.view
+  };
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(payload));
+  } catch (e) {
+    // 용량이 찼으면 미리보기 사진부터 줄여 다시 시도합니다.
+    pruneThumbs(real);
+    real.forEach((a, i) => { if (i % 2) a.thumb = ''; });
+    try { localStorage.setItem(LS_KEY, JSON.stringify(payload)); } catch (e2) {
+      setSync('err', '이 기기 저장 공간 부족');
+      toast('기기 저장 공간이 부족해 미리보기 사진을 줄였어요');
+    }
+  }
+}
+
+/* 기기에 남은 원본(아직 드라이브로 못 보낸 사진) 보관함 ── IndexedDB */
+const Pending = (function () {
+  let dbp = null;
+  function open() {
+    if (dbp) return dbp;
+    dbp = new Promise((res, rej) => {
+      if (!window.indexedDB) return rej(new Error('no idb'));
+      const r = indexedDB.open('kids-gallery', 1);
+      r.onupgradeneeded = () => { r.result.createObjectStore('pending'); };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    }).catch(() => null);
+    return dbp;
+  }
+  function tx(mode, fn) {
+    return open().then(db => {
+      if (!db) throw new Error('no idb');
+      return new Promise((res, rej) => {
+        const t = db.transaction('pending', mode);
+        const st = t.objectStore('pending');
+        const req = fn(st);
+        t.oncomplete = () => res(req && req.result);
+        t.onerror = () => rej(t.error);
+      });
+    });
+  }
+  return {
+    put(id, dataUrl) { return tx('readwrite', st => st.put(dataUrl, id)).catch(() => {}); },
+    del(id) { return tx('readwrite', st => st.delete(id)).catch(() => {}); },
+    get(id) { return tx('readonly', st => st.get(id)).catch(() => null); },
+    all() {
+      return open().then(db => {
+        if (!db) return [];
+        return new Promise(res => {
+          const t = db.transaction('pending', 'readonly');
+          const out = [];
+          t.objectStore('pending').openCursor().onsuccess = ev => {
+            const c = ev.target.result;
+            if (c) { out.push({ id: c.key, data: c.value }); c.continue(); } else res(out);
+          };
+          t.onerror = () => res([]);
+        });
+      }).catch(() => []);
+    }
+  };
+})();
+
+/* ─────────────────────────── 3. 링크(#s= / #v=) ─────────────────────────── */
+function parseHash() {
+  const h = location.hash.replace(/^#/, '');
+  if (!h) return null;
+  const m = h.match(/(?:^|&)([sv])=([^&]*)/);
+  if (!m) return null;
+  return { mode: m[1] === 'v' ? 'view' : 'edit', url: b64dec(decodeURIComponent(m[2])) };
+}
+function pageBase() {
+  if (location.protocol === 'file:') return location.href.split('#')[0].split('?')[0];
+  return location.origin + location.pathname;
+}
+function buildLink(mode, url) {
+  const u = url || S.sheetUrl;
+  if (!u) return '';
+  return pageBase() + '#' + (mode === 'view' ? 'v' : 's') + '=' + b64enc(u);
+}
+
+/* ─────────────────────────── 4. 구글 시트 API ─────────────────────────── */
+function joinUrl(base, q) { return base + (base.indexOf('?') >= 0 ? '&' : '?') + q; }
+function jsonp(action, extra, timeout) {
+  return new Promise((resolve, reject) => {
+    if (!S.sheetUrl) { reject(new Error('시트 주소가 없습니다')); return; }
+    const cb = '__kg_cb_' + Math.random().toString(36).slice(2);
+    const s = document.createElement('script');
+    let done = false;
+    const timer = setTimeout(() => finish(new Error('응답이 없습니다')), timeout || 15000);
+    function finish(err, data) {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+      if (s.parentNode) s.parentNode.removeChild(s);
+      if (err) reject(err); else resolve(data);
+    }
+    window[cb] = d => finish(null, d);
+    s.onerror = () => finish(new Error('주소를 열 수 없습니다'));
+    s.src = joinUrl(S.sheetUrl, 'action=' + encodeURIComponent(action) + '&callback=' + cb + (extra || ''));
+    document.body.appendChild(s);
+  });
+}
+function postJSON(body, timeout) {
+  if (!S.sheetUrl) return Promise.reject(new Error('시트 주소가 없습니다'));
+  const ctrl = window.AbortController ? new AbortController() : null;
+  const timer = setTimeout(() => { if (ctrl) ctrl.abort(); }, timeout || 60000);
+  return fetch(S.sheetUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body),
+    redirect: 'follow',
+    signal: ctrl ? ctrl.signal : undefined
+  }).then(r => r.text()).then(txt => {
+    clearTimeout(timer);
+    try { return JSON.parse(txt); } catch (e) { return { ok: false, error: '응답을 해석하지 못했습니다' }; }
+  }).catch(err => { clearTimeout(timer); throw err; });
+}
+
+/* ─────────────────────────── 5. 사진 정리 ─────────────────────────── */
+function fileToImage(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); res(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('사진을 읽지 못했습니다')); };
+    img.src = url;
+  });
+}
+function resizeDataURL(img, maxSide, quality, maxChars) {
+  let side = maxSide, q = quality;
+  for (let i = 0; i < 6; i++) {
+    const r = Math.min(1, side / Math.max(img.width, img.height));
+    const w = Math.max(1, Math.round(img.width * r));
+    const h = Math.max(1, Math.round(img.height * r));
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const g = c.getContext('2d');
+    g.imageSmoothingQuality = 'high';
+    g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);
+    g.drawImage(img, 0, 0, w, h);
+    const out = c.toDataURL('image/jpeg', q);
+    if (!maxChars || out.length <= maxChars) return out;
+    side = Math.round(side * 0.82);
+    q = Math.max(0.5, q - 0.04);
+  }
+  return '';
+}
+
+/* ─────────────────────────── 6. 화면 계산 ─────────────────────────── */
+const canvas = $('#stage');
+const ctx = canvas.getContext('2d');
+let DPR = 1, CW = 0, CH = 0;
+const cam = { a: 32, b: 16, zh: 30, ox: 0, oy: 0, scale: 1 };
+const char = { x: 4.6, y: 5.4, path: [], moving: false, phase: 0, facing: 1, speed: 3.6 };
+const anim = { fade: 0 };
+let hits = [];
+let dirty = true;
+
+function proj(x, y, z) {
+  return { x: cam.ox + (x - y) * cam.a, y: cam.oy + (x + y) * cam.b - z * cam.zh };
+}
+function planeBase(plane) {
+  if (plane === 'A') return { axis: 'x', at: 0 };
+  if (plane === 'B') return { axis: 'y', at: 0 };
+  const p = PARTITIONS.filter(q => q.id === plane)[0];
+  return { axis: p.axis, at: p.at + p.t };
+}
+function planePoint(plane, u, z) {
+  const b = planeBase(plane);
+  return b.axis === 'x' ? proj(u, b.at, z) : proj(b.at, u, z);
+}
+function wallQuad(plane, u0, u1, z0, z1) {
+  const b = planeBase(plane);
+  const uL = b.axis === 'x' ? u0 : u1;
+  const uR = b.axis === 'x' ? u1 : u0;
+  return [planePoint(plane, uL, z1), planePoint(plane, uR, z1), planePoint(plane, uR, z0), planePoint(plane, uL, z0)];
+}
+function pathPoly(pts) {
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.closePath();
+}
+function inPoly(pt, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i], b = poly[j];
+    if (((a.y > pt.y) !== (b.y > pt.y)) && (pt.x < (b.x - a.x) * (pt.y - a.y) / (b.y - a.y) + a.x)) inside = !inside;
+  }
+  return inside;
+}
+function polyCenter(poly) {
+  let x = 0, y = 0;
+  poly.forEach(p => { x += p.x; y += p.y; });
+  return { x: x / poly.length, y: y / poly.length };
+}
+/* 액자 테두리보다 조금 넓힌 클릭 영역 (화면 좌표에서 바깥으로 PAD px) */
+function padPoly(poly, pad) {
+  const c = polyCenter(poly);
+  return poly.map(p => {
+    const dx = p.x - c.x, dy = p.y - c.y;
+    const d = Math.hypot(dx, dy) || 1;
+    return { x: p.x + dx / d * pad, y: p.y + dy / d * pad };
+  });
+}
+function drawImageQuad(img, q) {
+  const TL = q[0], TR = q[1], BL = q[3];
+  const m0 = (TR.x - TL.x) / 100, m1 = (TR.y - TL.y) / 100;
+  const m2 = (BL.x - TL.x) / 100, m3 = (BL.y - TL.y) / 100;
+  ctx.save();
+  ctx.setTransform(m0 * DPR, m1 * DPR, m2 * DPR, m3 * DPR, TL.x * DPR, TL.y * DPR);
+  ctx.imageSmoothingQuality = 'high';
+  try { ctx.drawImage(img, 0, 0, 100, 100); } catch (e) {}
+  ctx.restore();
+}
+
+/* 슬롯 배치 — 방 하나에 26칸
+   배열 순서가 곧 작품을 거는 순서입니다 (아래 줄 → 가벽 → 위 줄).
+   벽 B 는 화면 왼쪽, 벽 A 는 오른쪽이라 사람이 읽는 순서(왼→오)로 놓습니다. */
+function buildSlots() {
+  const out = [];
+  function row(plane, u0, u1, n, z, h, gap, rev) {
+    const span = u1 - u0;
+    const w = Math.min(2.12, (span - gap * (n - 1)) / n);
+    const total = w * n + gap * (n - 1);
+    const start = u0 + (span - total) / 2;
+    const arr = [];
+    for (let i = 0; i < n; i++) arr.push({ plane: plane, u: start + w / 2 + i * (w + gap), z: z, w: w, h: h });
+    if (rev) arr.reverse();
+    arr.forEach((s, i) => { s.key = plane + '-' + Math.round(z * 10) + '-' + i; });
+    return arr;
+  }
+  const A0 = 0.55, A1 = VIEW.W - 0.55, B0 = 0.55, B1 = VIEW.D - 0.55;
+  out.push.apply(out, row('A', A0, A1, 5, 1.05, 1.50, 0.20, false));   // 벽 A 아래 줄
+  out.push.apply(out, row('B', B0, B1, 4, 1.05, 1.50, 0.22, true));    // 벽 B 아래 줄
+  out.push.apply(out, row('P1', 1.15, 6.25, 4, 1.45, 1.10, 0.20, false));
+  out.push.apply(out, row('P2', 1.05, 5.55, 4, 1.45, 1.10, 0.20, false));
+  out.push.apply(out, row('A', A0, A1, 5, 2.60, 1.50, 0.20, false));   // 벽 A 위 줄
+  out.push.apply(out, row('B', B0, B1, 4, 2.60, 1.50, 0.22, true));    // 벽 B 위 줄
+  return out;
+}
+const SLOTS = buildSlots();
+const SLOT_BY_KEY = {};
+SLOTS.forEach(s => { SLOT_BY_KEY[s.key] = s; });
+/* 작품이 적을 때도 벽·가벽에 고르게 펼쳐지도록, 무리(벽 한 줄)·가벽을 번갈아 가며 채웁니다. */
+const SLOT_ORDER = (function () {
+  const groups = [];
+  SLOTS.forEach(s => {
+    const gk = s.plane + '@' + s.z;
+    let g = groups.filter(q => q.k === gk)[0];
+    if (!g) { g = { k: gk, keys: [] }; groups.push(g); }
+    g.keys.push(s.key);
+  });
+  const out = [];
+  let more = true;
+  for (let i = 0; more; i++) {
+    more = false;
+    groups.forEach(g => { if (g.keys[i]) { out.push(g.keys[i]); more = true; } });
+  }
+  return out;
+})();
+
+/* 한 방의 작품이 26칸을 넘으면 같은 방을 1관·2관으로 나눕니다.
+   칸을 넘길 때까지 채우지 않고, 관마다 비슷한 수로 고르게 나눕니다(예: 27점 → 14 + 13). */
+function hallPlan(n) {
+  const cap = SLOTS.length;
+  const halls = Math.max(1, Math.ceil(n / cap));
+  const per = Math.ceil(n / halls) || cap;
+  return { halls: halls, per: Math.min(cap, per) };
+}
+
+/* ─────────────────────────── 7. 파생 데이터 ─────────────────────────── */
+function artistLabel(key) { return key === 'a2' ? (S.settings.artist2 || '아이 2') : (S.settings.artist1 || '아이 1'); }
+function personLabel(key) {
+  if (key === 'dad') return S.settings.dadName || '아빠';
+  if (key === 'mom') return S.settings.momName || '엄마';
+  if (key === 'a1') return S.settings.kid1Name || artistLabel('a1');
+  return S.settings.kid2Name || artistLabel('a2');
+}
+function floorYears() {
+  const set = new Set();
+  S.artworks.forEach(a => set.add(yearOf(a.date)));
+  set.add(S.view.year);
+  S.extraYears.forEach(y => set.add(y));
+  if (!set.size) set.add(new Date().getFullYear());
+  return Array.from(set).sort((a, b) => a - b);
+}
+function floorOf(year) { return floorYears().indexOf(year) + 1; }
+function artistWorks(artist) {
+  return S.artworks.filter(a => artist === 'all' || a.artist === artist);
+}
+function roomWorks(year, room, artist, order) {
+  let list = S.artworks.filter(a => yearOf(a.date) === year && quarterOf(a.date) === room);
+  if (artist && artist !== 'all') list = list.filter(a => a.artist === artist);
+  list.sort((a, b) => {
+    const d = String(a.date).localeCompare(String(b.date));
+    if (d !== 0) return order === 'desc' ? -d : d;
+    const c = String(a.createdAt || '').localeCompare(String(b.createdAt || ''));
+    return order === 'desc' ? -c : c;
+  });
+  return list;
+}
+
+/* ─────────────────────────── 8. 카메라 ─────────────────────────── */
+function layoutInsets() {
+  const narrow = CW < 620;
+  const topEl = $('.strips2');
+  const botEl = $('.bottomwrap');
+  const topH = topEl ? topEl.getBoundingClientRect().bottom + 8 : 104;
+  const botH = botEl ? CH - botEl.getBoundingClientRect().top + 8 : (narrow ? 150 : 110);
+  return {
+    l: narrow ? 10 : 82,
+    r: narrow ? 10 : 22,
+    t: Math.max(topH, 86),
+    b: Math.max(botH, narrow ? 138 : 106)
+  };
+}
+function computeCam() {
+  const ins = layoutInsets();
+  const availW = Math.max(120, CW - ins.l - ins.r);
+  const availH = Math.max(120, CH - ins.t - ins.b);
+  const span = VIEW.W + VIEW.D;
+  // 깊이 기울기는 화면 비율에 맞춰 고릅니다.
+  // 넓은 화면은 납작하게(전시실을 크게), 좁은 화면은 깊게(빈 위아래를 줄여) 보이도록.
+  const want = (availH * span * VIEW.A / availW - VIEW.H * VIEW.ZH) / span;
+  const depth = clamp(want, 14, 26);
+  const bboxW = span * VIEW.A;
+  const bboxH = span * depth + VIEW.H * VIEW.ZH;
+  const s = Math.min(availW / bboxW, availH / bboxH);
+  cam.scale = s;
+  cam.depth = depth;
+  cam.a = VIEW.A * s; cam.b = depth * s; cam.zh = VIEW.ZH * s;
+  const cx = (VIEW.W - VIEW.D) * cam.a / 2;
+  const cy = ((VIEW.W + VIEW.D) * cam.b - VIEW.H * cam.zh) / 2;
+  cam.ox = ins.l + availW / 2 - cx;
+  cam.oy = ins.t + availH / 2 - cy + (isNarrow() ? 16 : 0);
+}
+function isNarrow() { return CW < 620; }
+function resize() {
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  CW = window.innerWidth; CH = window.innerHeight;
+  canvas.width = Math.round(CW * DPR);
+  canvas.height = Math.round(CH * DPR);
+  canvas.style.width = CW + 'px';
+  canvas.style.height = CH + 'px';
+  computeCam();
+  dirty = true;
+}
+
+/* ─────────────────────────── 9. 그림 ─────────────────────────── */
+const imgCache = new Map();
+function artSource(a) { return a.thumb || a.driveThumb || a.thumbUrl || ''; }
+function imgFor(a) {
+  const src = artSource(a);
+  if (!src) return null;
+  let rec = imgCache.get(a.id);
+  if (!rec || rec.src !== src) {
+    const img = new Image();
+    rec = { src: src, img: img, ok: false };
+    img.decoding = 'async';
+    img.onload = () => { rec.ok = true; dirty = true; };
+    img.onerror = () => {
+      // 드라이브 썸네일이 막히면 다른 주소로 한 번 더 시도합니다.
+      if (a.driveFileId && rec.src.indexOf('drive.google.com/thumbnail') >= 0) {
+        const alt = 'https://lh3.googleusercontent.com/d/' + a.driveFileId + '=w1200';
+        rec.src = alt; img.src = alt; return;
+      }
+      rec.ok = false; dirty = true;
+    };
+    img.src = src;
+    imgCache.set(a.id, rec);
+  }
+  return rec.ok ? rec.img : null;
+}
+
+function drawBackdrop() {
+  const g = ctx.createRadialGradient(CW * 0.5, CH * 0.36, Math.min(CW, CH) * 0.08, CW * 0.5, CH * 0.5, Math.max(CW, CH) * 0.78);
+  g.addColorStop(0, '#FEF9F2');
+  g.addColorStop(0.5, '#F8EDE0');
+  g.addColorStop(1, '#EEDCC9');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, CW, CH);
+}
+
+function drawFloor() {
+  const W = VIEW.W, D = VIEW.D;
+  const quad = [proj(0, 0, 0), proj(W, 0, 0), proj(W, D, 0), proj(0, D, 0)];
+  pathPoly(quad);
+  const g = ctx.createLinearGradient(0, proj(0, 0, 0).y, 0, proj(W, D, 0).y);
+  g.addColorStop(0, '#EDD1A8');
+  g.addColorStop(0.55, '#E7C79A');
+  g.addColorStop(1, '#DFB98A');
+  ctx.fillStyle = g;
+  ctx.fill();
+
+  ctx.save();
+  pathPoly(quad); ctx.clip();
+  // 마루 널
+  ctx.strokeStyle = 'rgba(126,88,52,.13)';
+  ctx.lineWidth = Math.max(0.7, 1.1 * cam.scale);
+  for (let y = 0.45; y < D; y += 0.45) {
+    const p1 = proj(0, y, 0), p2 = proj(W, y, 0);
+    ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(126,88,52,.07)';
+  for (let x = 1; x < W; x++) {
+    const p1 = proj(x, 0, 0), p2 = proj(x, D, 0);
+    ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+  }
+  // 벽 밑 그늘
+  ctx.fillStyle = 'rgba(104,70,44,.09)';
+  pathPoly([proj(0, 0, 0), proj(W, 0, 0), proj(W, 0.55, 0), proj(0, 0.55, 0)]); ctx.fill();
+  pathPoly([proj(0, 0, 0), proj(0, D, 0), proj(0.55, D, 0), proj(0.55, 0, 0)]); ctx.fill();
+  ctx.restore();
+
+  // 러그
+  const r0 = 2.6, r1 = 6.9, q0 = 6.5, q1 = 9.2;
+  pathPoly([proj(r0, q0, 0.005), proj(r1, q0, 0.005), proj(r1, q1, 0.005), proj(r0, q1, 0.005)]);
+  ctx.fillStyle = '#E7C3B8'; ctx.fill();
+  const in0 = r0 + 0.16, in1 = r1 - 0.16, ip0 = q0 + 0.16, ip1 = q1 - 0.16;
+  pathPoly([proj(in0, ip0, 0.006), proj(in1, ip0, 0.006), proj(in1, ip1, 0.006), proj(in0, ip1, 0.006)]);
+  ctx.fillStyle = '#F0D8CE'; ctx.fill();
+  pathPoly([proj(in0 + 0.14, ip0 + 0.14, 0.007), proj(in1 - 0.14, ip0 + 0.14, 0.007), proj(in1 - 0.14, ip1 - 0.14, 0.007), proj(in0 + 0.14, ip1 - 0.14, 0.007)]);
+  ctx.strokeStyle = 'rgba(196,138,120,.35)';
+  ctx.lineWidth = Math.max(0.8, 1.4 * cam.scale);
+  ctx.stroke();
+}
+
+function wallQuadA() {
+  return [proj(0, 0, 0), proj(VIEW.W, 0, 0), proj(VIEW.W, 0, VIEW.H), proj(0, 0, VIEW.H)];
+}
+function wallQuadB() {
+  return [proj(0, 0, 0), proj(0, VIEW.D, 0), proj(0, VIEW.D, VIEW.H), proj(0, 0, VIEW.H)];
+}
+function drawWallBase(which) {
+  const W = VIEW.W, D = VIEW.D, H = VIEW.H;
+  const q = which === 'A' ? wallQuadA() : wallQuadB();
+  pathPoly(q);
+  const ys = q.map(p => p.y);
+  const g = ctx.createLinearGradient(0, Math.min.apply(null, ys), 0, Math.max.apply(null, ys));
+  g.addColorStop(0, which === 'A' ? '#FDF6EF' : '#F8EEE6');
+  g.addColorStop(1, which === 'A' ? '#F3E3D7' : '#EDD8CB');
+  ctx.fillStyle = g; ctx.fill();
+
+  // 걸레받이
+  const bb = (which === 'A')
+    ? [proj(0, 0, 0), proj(W, 0, 0), proj(W, 0, 0.17), proj(0, 0, 0.17)]
+    : [proj(0, 0, 0), proj(0, D, 0), proj(0, D, 0.17), proj(0, 0, 0.17)];
+  pathPoly(bb); ctx.fillStyle = which === 'A' ? '#EBD2C4' : '#E5C8B9'; ctx.fill();
+
+  // 천장 쪽 띠 (따뜻한 포인트)
+  const tr = (which === 'A')
+    ? [proj(0, 0, H - 0.13), proj(W, 0, H - 0.13), proj(W, 0, H), proj(0, 0, H)]
+    : [proj(0, 0, H - 0.13), proj(0, D, H - 0.13), proj(0, D, H), proj(0, 0, H)];
+  pathPoly(tr); ctx.fillStyle = which === 'A' ? '#E9C1B8' : '#E3B6AC'; ctx.fill();
+}
+
+function drawFrame(slot, art) {
+  if (!art) return;   // 빈 자리는 그리지 않아 벽이 깔끔하게 보입니다
+  const u0 = slot.u - slot.w / 2, u1 = slot.u + slot.w / 2;
+  const z0 = slot.z - slot.h / 2, z1 = slot.z + slot.h / 2;
+  const q = wallQuad(slot.plane, u0, u1, z0, z1);
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(96,66,44,.22)';
+  ctx.shadowBlur = Math.max(5, 9 * cam.scale);
+  ctx.shadowOffsetY = Math.max(1.5, 3 * cam.scale);
+  pathPoly(q);
+  ctx.fillStyle = '#FFFDFA';
+  ctx.fill();
+  ctx.restore();
+
+  const pad = Math.min(0.12, slot.w * 0.09);
+  const inner = wallQuad(slot.plane, u0 + pad, u1 - pad, z0 + pad, z1 - pad);
+  pathPoly(inner);
+  ctx.fillStyle = art ? '#FFFBF5' : '#F4E9DE';
+  ctx.fill();
+
+  if (art) {
+    const img = imgFor(art);
+    if (img) {
+      const fw = slot.w - pad * 2, fh = slot.h - pad * 2;
+      const asp = (img.width || 4) / (img.height || 3);
+      let du = fw, dv = fw / asp;
+      if (dv > fh) { dv = fh; du = fh * asp; }
+      const iq = wallQuad(slot.plane, slot.u - du / 2, slot.u + du / 2, slot.z - dv / 2, slot.z + dv / 2);
+      drawImageQuad(img, iq);
+    } else {
+      // 사진을 불러오는 동안 / 주소가 없을 때 — 빈 액자 느낌의 작은 그림 표시
+      const c = planePoint(slot.plane, slot.u, slot.z);
+      const r2 = Math.max(7, 15 * cam.scale);
+      ctx.strokeStyle = 'rgba(178,144,118,.42)';
+      ctx.lineWidth = Math.max(1, 1.3 * cam.scale);
+      roundRect(ctx, c.x - r2, c.y - r2 * 0.78, r2 * 2, r2 * 1.56, r2 * 0.3);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(c.x - r2 * 0.62, c.y + r2 * 0.5);
+      ctx.lineTo(c.x - r2 * 0.08, c.y - r2 * 0.12);
+      ctx.lineTo(c.x + r2 * 0.34, c.y + r2 * 0.5);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(c.x + r2 * 0.5, c.y - r2 * 0.32, r2 * 0.14, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(178,144,118,.45)';
+      ctx.fill();
+    }
+  }
+
+  pathPoly(q);
+  ctx.strokeStyle = 'rgba(154,124,99,.35)';
+  ctx.lineWidth = Math.max(0.7, 1.1 * cam.scale);
+  ctx.stroke();
+
+  if (art) {
+    const c = polyCenter(q);
+    hits.push({ id: art.id, poly: q, pad: padPoly(q, HIT_PAD), cx: c.x, cy: c.y });
+  }
+}
+
+function drawPartition(p) {
+  const t = p.t, H = p.h;
+  const ua = p.from, ub = p.to, at = p.at;
+  const face = (p.axis === 'x')
+    ? [proj(ua, at + t, 0), proj(ub, at + t, 0), proj(ub, at + t, H), proj(ua, at + t, H)]
+    : [proj(at + t, ua, 0), proj(at + t, ub, 0), proj(at + t, ub, H), proj(at + t, ua, H)];
+  const top = (p.axis === 'x')
+    ? [proj(ua, at, H), proj(ub, at, H), proj(ub, at + t, H), proj(ua, at + t, H)]
+    : [proj(at, ua, H), proj(at, ub, H), proj(at + t, ub, H), proj(at + t, ua, H)];
+  const end = (p.axis === 'x')
+    ? [proj(ub, at, 0), proj(ub, at + t, 0), proj(ub, at + t, H), proj(ub, at, H)]
+    : [proj(at, ub, 0), proj(at + t, ub, 0), proj(at + t, ub, H), proj(at, ub, H)];
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(96,66,44,.16)';
+  ctx.shadowBlur = Math.max(4, 10 * cam.scale);
+  ctx.shadowOffsetY = Math.max(1.5, 3 * cam.scale);
+  pathPoly(end); ctx.fillStyle = '#E7CEC0'; ctx.fill();
+  ctx.restore();
+
+  pathPoly(top); ctx.fillStyle = '#E9CDAA'; ctx.fill();
+  pathPoly(face); ctx.fillStyle = '#FBF1E8'; ctx.fill();
+
+  // 걸레받이
+  const bb = (p.axis === 'x')
+    ? [proj(ua, at + t, 0), proj(ub, at + t, 0), proj(ub, at + t, 0.16), proj(ua, at + t, 0.16)]
+    : [proj(at + t, ua, 0), proj(at + t, ub, 0), proj(at + t, ub, 0.16), proj(at + t, ua, 0.16)];
+  pathPoly(bb); ctx.fillStyle = '#EFD9CC'; ctx.fill();
+
+  // 상단 나무 테두리
+  const rim = (p.axis === 'x')
+    ? [proj(ua, at + t, H - 0.07), proj(ub, at + t, H - 0.07), proj(ub, at + t, H), proj(ua, at + t, H)]
+    : [proj(at + t, ua, H - 0.07), proj(at + t, ub, H - 0.07), proj(at + t, ub, H), proj(at + t, ua, H)];
+  pathPoly(rim); ctx.fillStyle = '#D8AC80'; ctx.fill();
+
+  pathPoly(face);
+  ctx.strokeStyle = 'rgba(160,128,104,.18)';
+  ctx.lineWidth = Math.max(0.6, 1 * cam.scale);
+  ctx.stroke();
+}
+
+function isoBox(x0, y0, x1, y1, z0, z1, top, front, side) {
+  pathPoly([proj(x0, y1, z0), proj(x1, y1, z0), proj(x1, y1, z1), proj(x0, y1, z1)]);
+  ctx.fillStyle = front; ctx.fill();
+  pathPoly([proj(x1, y0, z0), proj(x1, y1, z0), proj(x1, y1, z1), proj(x1, y0, z1)]);
+  ctx.fillStyle = side; ctx.fill();
+  pathPoly([proj(x0, y0, z1), proj(x1, y0, z1), proj(x1, y1, z1), proj(x0, y1, z1)]);
+  ctx.fillStyle = top; ctx.fill();
+}
+
+function drawBench() {
+  const x0 = 8.75, x1 = 10.45, y0 = 7.05, y1 = 7.85;
+  ctx.save();
+  ctx.shadowColor = 'rgba(96,66,44,.18)';
+  ctx.shadowBlur = Math.max(6, 14 * cam.scale);
+  ctx.shadowOffsetY = Math.max(2, 4 * cam.scale);
+  isoBox(x0, y0, x1, y1, 0.16, 0.42, '#D7A87A', '#B98B60', '#C9996D');
+  ctx.restore();
+  isoBox(x0 + 0.06, y0 + 0.06, x1 - 0.06, y1 - 0.06, 0.42, 0.5, '#F0DCC6', '#DCC3A8', '#E6CEB4');
+  // 다리
+  [[x0 + 0.12, y0 + 0.12], [x1 - 0.2, y0 + 0.12], [x0 + 0.12, y1 - 0.2], [x1 - 0.2, y1 - 0.2]].forEach(p => {
+    isoBox(p[0], p[1], p[0] + 0.1, p[1] + 0.1, 0, 0.17, '#B98B60', '#9C7048', '#A67B52');
+  });
+}
+
+function drawPlant() {
+  const cx = 1.05, cy = 8.9, s = cam.scale;
+  // 화분
+  isoBox(cx - 0.3, cy - 0.3, cx + 0.3, cy + 0.3, 0, 0.52, '#C98A66', '#B3704F', '#BC7957');
+  isoBox(cx - 0.26, cy - 0.26, cx + 0.26, cy + 0.26, 0.52, 0.56, '#6B4B38', '#5A3E2E', '#5A3E2E');
+  const base = proj(cx, cy, 0.56);
+  const leaves = [
+    [-0.30, -0.62, -0.5, 22], [0.02, -0.78, 0.1, 20], [0.30, -0.58, 0.55, 24],
+    [-0.16, -0.90, -0.2, 18], [0.18, -0.88, 0.3, 17], [-0.42, -0.34, -0.9, 22], [0.42, -0.32, 0.95, 22]
+  ];
+  leaves.forEach((L, i) => {
+    ctx.save();
+    ctx.translate(base.x, base.y);
+    ctx.rotate(L[2]);
+    ctx.beginPath();
+    ctx.ellipse(0, L[1] * cam.zh * 0.62, 0.13 * cam.zh, L[1] * -1 * cam.zh * 0.62, 0, 0, Math.PI * 2);
+    ctx.fillStyle = i % 2 ? '#7FA97C' : '#6D9B70';
+    ctx.fill();
+    ctx.restore();
+  });
+  ctx.beginPath();
+  ctx.arc(base.x, base.y - 0.25 * cam.zh, 0.1 * cam.zh, 0, Math.PI * 2);
+  ctx.fillStyle = '#7FA97C'; ctx.fill();
+}
+
+function drawShadowUnderRoom() {
+  const c = proj(VIEW.W / 2, VIEW.D / 2, 0);
+  const rx = (VIEW.W + VIEW.D) * cam.a * 0.46;
+  const ry = (VIEW.W + VIEW.D) * cam.b * 0.46;
+  ctx.save();
+  ctx.translate(c.x, c.y + cam.a * 0.5);
+  ctx.scale(1, ry / rx);
+  const g = ctx.createRadialGradient(0, 0, rx * 0.2, 0, 0, rx);
+  g.addColorStop(0, 'rgba(120,84,54,.16)');
+  g.addColorStop(0.7, 'rgba(120,84,54,.07)');
+  g.addColorStop(1, 'rgba(120,84,54,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, rx, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function drawPerson() {
+  const P = PEOPLE[S.character] || PEOPLE.dad;
+  const p = proj(char.x, char.y, 0);
+  const H = P.h * cam.zh;
+  const walking = char.moving;
+  const ph = char.phase;
+  const bob = walking ? Math.abs(Math.sin(ph)) * H * 0.022 : Math.sin(ph * 0.35) * H * 0.004;
+  const feetY = p.y - bob;
+  const swing = walking ? Math.sin(ph) * H * 0.11 : 0;
+  const s = H;
+
+  ctx.save();
+  // 바닥 그림자
+  ctx.beginPath();
+  ctx.ellipse(p.x, p.y + s * 0.01, s * 0.23, s * 0.075, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(84,58,40,.20)';
+  ctx.fill();
+
+  // 다리
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = P.pants;
+  ctx.lineWidth = s * 0.085;
+  const hipY = feetY - s * 0.34;
+  ctx.beginPath();
+  ctx.moveTo(p.x - s * 0.05, hipY); ctx.lineTo(p.x - s * 0.05 + swing * 0.55, feetY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(p.x + s * 0.05, hipY); ctx.lineTo(p.x + s * 0.05 - swing * 0.55, feetY);
+  ctx.stroke();
+  // 신발
+  ctx.fillStyle = shade(P.pants, -34);
+  roundRect(ctx, p.x - s * 0.055 + swing * 0.55 - s * 0.055, feetY - s * 0.02, s * 0.11, s * 0.045, s * 0.02);
+  ctx.fill();
+  roundRect(ctx, p.x + s * 0.055 - swing * 0.55 - s * 0.055, feetY - s * 0.02, s * 0.11, s * 0.045, s * 0.02);
+  ctx.fill();
+
+  // 몸통
+  const bodyTop = feetY - s * 0.73;
+  const bodyBot = feetY - s * 0.30;
+  roundRect(ctx, p.x - s * 0.145, bodyTop, s * 0.29, bodyBot - bodyTop, s * 0.10);
+  const bg = ctx.createLinearGradient(p.x, bodyTop, p.x, bodyBot);
+  bg.addColorStop(0, P.shirt);
+  bg.addColorStop(1, P.shirt2);
+  ctx.fillStyle = bg; ctx.fill();
+
+  // 팔
+  ctx.strokeStyle = shade(P.shirt, -14);
+  ctx.lineWidth = s * 0.075;
+  ctx.beginPath();
+  ctx.moveTo(p.x - s * 0.145, bodyTop + s * 0.05);
+  ctx.lineTo(p.x - s * 0.205 - swing * 0.25, bodyTop + s * 0.30);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(p.x + s * 0.145, bodyTop + s * 0.05);
+  ctx.lineTo(p.x + s * 0.205 + swing * 0.25, bodyTop + s * 0.30);
+  ctx.stroke();
+  // 손
+  ctx.fillStyle = P.skin;
+  ctx.beginPath(); ctx.arc(p.x - s * 0.205 - swing * 0.25, bodyTop + s * 0.31, s * 0.039, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(p.x + s * 0.205 + swing * 0.25, bodyTop + s * 0.31, s * 0.039, 0, 7); ctx.fill();
+
+  const headY = feetY - s * 0.845;
+  const r = s * 0.135;
+
+  // 뒤 머리(긴 머리)
+  if (P.style === 'long') {
+    ctx.fillStyle = P.hair;
+    roundRect(ctx, p.x - r * 1.16, headY - r * 0.7, r * 2.32, r * 2.6, r * 0.9);
+    ctx.fill();
+  }
+
+  // 목
+  ctx.fillStyle = P.skin;
+  ctx.fillRect(p.x - r * 0.28, headY + r * 0.55, r * 0.56, r * 0.5);
+
+  // 얼굴
+  ctx.beginPath(); ctx.arc(p.x, headY, r, 0, Math.PI * 2);
+  ctx.fillStyle = P.skin; ctx.fill();
+
+  // 앞머리
+  ctx.fillStyle = P.hair;
+  if (P.style === 'long') {
+    ctx.beginPath();
+    ctx.arc(p.x, headY - r * 0.06, r * 1.03, Math.PI * 1.02, Math.PI * 2.02);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(p.x - r * 0.92, headY + r * 0.35, r * 0.3, r * 1.0, 0.1, 0, 7); ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(p.x + r * 0.92, headY + r * 0.35, r * 0.3, r * 1.0, -0.1, 0, 7); ctx.fill();
+  } else if (P.style === 'kid') {
+    ctx.beginPath();
+    ctx.arc(p.x, headY - r * 0.02, r * 1.02, Math.PI * 1.05, Math.PI * 1.95);
+    ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x, headY - r * 0.95, r * 0.22, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(p.x - r * 0.62, headY - r * 0.55, r * 0.3, r * 0.42, 0.5, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(p.x + r * 0.62, headY - r * 0.55, r * 0.3, r * 0.42, -0.5, 0, 7); ctx.fill();
+  } else {
+    ctx.beginPath();
+    ctx.arc(p.x, headY - r * 0.04, r * 1.03, Math.PI * 1.03, Math.PI * 1.97);
+    ctx.fill();
+    ctx.beginPath(); ctx.ellipse(p.x, headY - r * 0.72, r * 0.72, r * 0.36, 0, 0, 7); ctx.fill();
+  }
+
+  // 눈 · 입
+  ctx.fillStyle = '#3B302A';
+  ctx.beginPath(); ctx.arc(p.x - r * 0.36, headY + r * 0.08, r * 0.10, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(p.x + r * 0.36, headY + r * 0.08, r * 0.10, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(150,86,72,.85)';
+  ctx.lineWidth = Math.max(0.8, r * 0.13);
+  ctx.beginPath();
+  ctx.arc(p.x, headY + r * 0.26, r * 0.24, 0.35 * Math.PI, 0.65 * Math.PI);
+  ctx.stroke();
+  if (P.style === 'kid' || S.character === 'mom') {
+    ctx.fillStyle = 'rgba(228,140,132,.30)';
+    ctx.beginPath(); ctx.arc(p.x - r * 0.55, headY + r * 0.33, r * 0.20, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x + r * 0.55, headY + r * 0.33, r * 0.20, 0, 7); ctx.fill();
+  }
+
+  // 이름표
+  const label = personLabel(S.character);
+  const fs = Math.max(9, Math.min(13, s * 0.13));
+  ctx.font = '700 ' + fs + 'px ' + getComputedStyle(document.body).fontFamily;
+  const tw = ctx.measureText(label).width;
+  const ph2 = fs + 7;
+  roundRect(ctx, p.x - tw / 2 - 7, p.y + 3, tw + 14, ph2, ph2 / 2);
+  ctx.fillStyle = 'rgba(255,253,248,.94)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(160,130,110,.22)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = '#6B564A';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(label, p.x, p.y + 3 + ph2 / 2 + 0.5);
+  ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+
+  ctx.restore();
+}
+
+function drawTargetMark() {
+  if (!char.path.length) return;
+  const t = char.path[char.path.length - 1];
+  const p = proj(t.x, t.y, 0);
+  const r = Math.max(6, 12 * cam.scale);
+  const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 320);
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(p.x, p.y, r * (0.9 + pulse * 0.15), r * 0.5 * (0.9 + pulse * 0.15), 0, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(192,118,90,' + (0.28 + pulse * 0.28) + ')';
+  ctx.lineWidth = Math.max(1.2, 2 * cam.scale);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function draw() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.clearRect(0, 0, CW, CH);
+  drawBackdrop();
+
+  ctx.save();
+  if (anim.fade > 0) {
+    ctx.globalAlpha = Math.max(0, 1 - anim.fade * 0.92);
+    ctx.translate(0, anim.fade * 12);
+  }
+  hits = [];
+
+  drawShadowUnderRoom();
+  drawFloor();
+  drawWallBase('A');
+  drawWallBase('B');
+
+  // 벽에 걸린 액자 — 이 방의 작품을 관(페이지) 단위로 나눠 26칸에 차례로 겁니다.
+  const roomList = roomWorks(S.view.year, S.view.room, S.view.artist, 'asc');
+  const plan = hallPlan(roomList.length);
+  const hall = clamp(S.view.hall || 1, 1, plan.halls);
+  const list = roomList.slice((hall - 1) * plan.per, hall * plan.per);
+  const assign = {};
+  SLOT_ORDER.forEach((key, i) => { if (list[i]) assign[key] = list[i]; });
+  const allSlots = SLOTS;
+
+  const paintPlane = (plane) => {
+    allSlots.filter(s => s.plane === plane).forEach(s => drawFrame(s, assign[s.key] || null));
+  };
+  paintPlane('B');
+  paintPlane('A');
+
+  // 앞쪽 구조물·사람은 깊이 순서로
+  const objs = [];
+  PARTITIONS.forEach(p => {
+    objs.push({
+      depth: p.axis === 'x' ? (p.from + p.to) / 2 + p.at : p.at + (p.from + p.to) / 2,
+      draw: () => {
+        drawPartition(p);
+        allSlots.filter(s => s.plane === p.id).forEach(s => drawFrame(s, assign[s.key] || null));
+      }
+    });
+  });
+  objs.push({ depth: 1.05 + 8.9, draw: drawPlant });
+  objs.push({ depth: 9.6 + 7.45, draw: drawBench });
+  objs.push({ depth: char.x + char.y, draw: drawPerson });
+  objs.sort((a, b) => a.depth - b.depth).forEach(o => o.draw());
+
+  drawTargetMark();
+  ctx.restore();
+
+  // 방이 비었을 때 안내 위치
+  const em = $('#emptyRoom');
+  if (!em.hidden) {
+    const c = proj(VIEW.W * 0.5, VIEW.D * 0.5, 1.15);
+    em.style.transform = 'translate(-50%,-50%)';
+    em.style.maxWidth = Math.min(280, Math.max(190, (VIEW.W * 0.5) * cam.a)) + 'px';
+    em.style.left = Math.round(c.x) + 'px';
+    em.style.top = Math.round(c.y) + 'px';
+  }
+}
+
+/* ─────────────────────────── 10. 캐릭터 이동 ─────────────────────────── */
+function propRects() {
+  // 바닥에 놓인 가구 — 캐릭터가 그 위에 서지 않도록 막습니다.
+  return [
+    { x0: 8.75, x1: 10.45, y0: 7.05, y1: 7.85 },   // 벤치
+    { x0: 0.75, x1: 1.35, y0: 8.6, y1: 9.2 }      // 화분
+  ];
+}
+function blockerRects() {
+  const walls = PARTITIONS.map(p => p.axis === 'x'
+    ? { x0: p.from - 0.28, x1: p.to + 0.28, y0: p.at - 0.28, y1: p.at + p.t + 0.28 }
+    : { x0: p.at - 0.28, x1: p.at + p.t + 0.28, y0: p.from - 0.28, y1: p.to + 0.28 });
+  const props = propRects().map(r => ({ x0: r.x0 - 0.22, x1: r.x1 + 0.22, y0: r.y0 - 0.22, y1: r.y1 + 0.22 }));
+  return walls.concat(props);
+}
+function insideBlocker(x, y) {
+  return blockerRects().some(r => x > r.x0 && x < r.x1 && y > r.y0 && y < r.y1);
+}
+function segHitsRect(a, b, r) {
+  // 단순화: 표본 검사
+  for (let i = 0; i <= 10; i++) {
+    const t = i / 10;
+    const x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t;
+    if (x > r.x0 && x < r.x1 && y > r.y0 && y < r.y1) return true;
+  }
+  return false;
+}
+function planPath(from, to) {
+  const rects = blockerRects();
+  if (!rects.some(r => segHitsRect(from, to, r))) return [to];
+  const cands = [];
+  PARTITIONS.forEach(p => {
+    if (p.axis === 'x') {
+      cands.push({ x: p.from - 0.75, y: p.at + p.t / 2 });
+      cands.push({ x: p.to + 0.75, y: p.at + p.t / 2 });
+    } else {
+      cands.push({ x: p.at + p.t / 2, y: p.from - 0.75 });
+      cands.push({ x: p.at + p.t / 2, y: p.to + 0.75 });
+    }
+  });
+  let best = null, bestLen = Infinity;
+  propRects().forEach(r => {
+    cands.push({ x: r.x0 - 0.55, y: r.y0 - 0.55 });
+    cands.push({ x: r.x1 + 0.55, y: r.y0 - 0.55 });
+    cands.push({ x: r.x0 - 0.55, y: r.y1 + 0.55 });
+    cands.push({ x: r.x1 + 0.55, y: r.y1 + 0.55 });
+  });
+  cands.forEach(w => {
+    const w2 = { x: clamp(w.x, 0.55, VIEW.W - 0.55), y: clamp(w.y, 0.55, VIEW.D - 0.55) };
+    const ok1 = !rects.some(r => segHitsRect(from, w2, r));
+    const ok2 = !rects.some(r => segHitsRect(w2, to, r));
+    if (ok1 && ok2) {
+      const len = Math.hypot(w2.x - from.x, w2.y - from.y) + Math.hypot(to.x - w2.x, to.y - w2.y);
+      if (len < bestLen) { bestLen = len; best = w2; }
+    }
+  });
+  return best ? [best, to] : [to];
+}
+function walkTo(target) {
+  let t = { x: clamp(target.x, 0.6, VIEW.W - 0.6), y: clamp(target.y, 0.6, VIEW.D - 0.6) };
+  if (insideBlocker(t.x, t.y)) {
+    // 가구·가벽 위를 눌렀으면 그 옆의 설 수 있는 자리로 보냅니다.
+    let found = null;
+    for (let r = 0.5; r <= 1.8 && !found; r += 0.35) {
+      for (let a = 0; a < 8; a++) {
+        const ang = a * Math.PI / 4;
+        const px = clamp(t.x + Math.cos(ang) * r, 0.6, VIEW.W - 0.6);
+        const py = clamp(t.y + Math.sin(ang) * r, 0.6, VIEW.D - 0.6);
+        if (!insideBlocker(px, py)) { found = { x: px, y: py }; break; }
+      }
+    }
+    if (!found) return;
+    t = found;
+  }
+  char.path = planPath({ x: char.x, y: char.y }, t);
+  dirty = true;
+  hideHint();
+}
+function unproject(px, py) {
+  const dx = px - cam.ox, dy = py - cam.oy;
+  const x = (dx / cam.a + dy / cam.b) / 2;
+  const y = (dy / cam.b - dx / cam.a) / 2;
+  if (x < -0.9 || x > VIEW.W + 0.9 || y < -0.9 || y > VIEW.D + 0.9) return null;
+  return { x: clamp(x, 0.6, VIEW.W - 0.6), y: clamp(y, 0.6, VIEW.D - 0.6) };
+}
+function hitTest(px, py) {
+  // 넓힌 클릭 영역이 서로 조금씩 겹치므로, 누른 곳에서 가장 가까운 액자를 고릅니다.
+  const pt = { x: px, y: py };
+  let best = null, bestD = Infinity;
+  for (let i = 0; i < hits.length; i++) {
+    const h = hits[i];
+    const inside = inPoly(pt, h.poly) || (h.pad && inPoly(pt, h.pad));
+    if (!inside) continue;
+    const d = (px - h.cx) * (px - h.cx) + (py - h.cy) * (py - h.cy);
+    if (d < bestD) { bestD = d; best = h.id; }
+  }
+  return best;
+}
+let hold = null;
+function applyHold(dt) {
+  if (!hold) return false;
+  const v = hold;
+  const step = char.speed * dt;
+  let nx = clamp(char.x + v.x * step, 0.6, VIEW.W - 0.6);
+  let ny = clamp(char.y + v.y * step, 0.6, VIEW.D - 0.6);
+  if (insideBlocker(nx, char.y)) nx = char.x;
+  if (insideBlocker(char.x, ny)) ny = char.y;
+  const dx = nx - char.x, dy = ny - char.y;
+  const moved = Math.abs(dx) + Math.abs(dy) > 1e-4;
+  char.x = nx; char.y = ny;
+  if (moved) {
+    char.moving = true;
+    char.phase += dt * 9.5;
+    char.facing = (dx - dy) >= 0 ? 1 : -1;
+    hideHint();
+    return true;
+  }
+  if (char.moving) { char.moving = false; dirty = true; }
+  return false;
+}
+function updateChar(dt) {
+  if (hold) return applyHold(dt);
+  if (!char.path.length) {
+    if (char.moving) { char.moving = false; dirty = true; }
+    if (!char.moving) char.phase += dt * 1.2;   // 숨쉬기
+    return false;
+  }
+  const t = char.path[0];
+  const dx = t.x - char.x, dy = t.y - char.y;
+  const dist = Math.hypot(dx, dy);
+  const step = char.speed * dt;
+  const prevX = char.x, prevY = char.y;
+  if (dist <= step || dist < 1e-3) {
+    char.x = t.x; char.y = t.y;
+    char.path.shift();
+  } else {
+    char.x += dx / dist * step;
+    char.y += dy / dist * step;
+  }
+  char.moving = true;
+  char.phase += dt * 9.5;
+  char.facing = (char.x - prevX) - (char.y - prevY) >= 0 ? 1 : -1;
+  return true;
+}
+
+/* ─────────────────────────── 11. 화면(크롬) ─────────────────────────── */
+function setSync(kind, text) {
+  S.sync = kind;
+  const d = $('#syncDot');
+  if (!d) return;
+  d.className = 'syncdot' + (kind === 'on' ? ' on' : kind === 'err' ? ' err' : kind === 'wait' ? ' wait' : '');
+  $('#syncText').textContent = text || '';
+  d.title = text || '';
+}
+function renderChrome() {
+  document.title = (S.settings.museumTitle || '우리 가족 미술관');
+  $('#museumTitle').textContent = S.settings.museumTitle || '우리 가족 미술관';
+
+  const years = floorYears();
+  const fl = floorOf(S.view.year);
+  const rw = roomWorks(S.view.year, S.view.room, S.view.artist, 'asc');
+  const plan = hallPlan(rw.length);
+  const halls = plan.halls;
+  S.view.hall = clamp(S.view.hall || 1, 1, halls);
+  const narrow = CW < 700;
+  const viewTag = (S.mode === 'view' && narrow) ? '관람 전용 · ' : '';
+  const hallTag = halls > 1 ? (' · ' + S.view.hall + '관') : '';
+  $('#placeLine').textContent = viewTag + (narrow
+    ? (fl + '층 ' + S.view.year + ' · ' + S.view.room + '실 · ' + rw.length + '점' + (S.demo ? ' · 예시' : ''))
+    : (fl + '층 · ' + S.view.year + '년 · ' + S.view.room + '실 (' + ROOMS[S.view.room - 1].label + ') · 작품 ' + rw.length + '점' + hallTag + (S.demo ? ' · 예시 작품' : '')));
+
+  // 전시 구역(관) — 방 하나에 26칸을 넘으면 같은 방 안에서 1관·2관으로 나눠 봅니다.
+  const hallsEl = $('#halls');
+  if (hallsEl) {
+    hallsEl.hidden = halls <= 1;
+    hallsEl.innerHTML = halls <= 1 ? '' : Array.from({ length: halls }, (_, i) =>
+      '<button data-hall="' + (i + 1) + '" class="' + (S.view.hall === i + 1 ? 'on' : '') + '">' + (i + 1) + '관</button>').join('');
+  }
+
+  // 방 탭
+  const roomsEl = $('#rooms');
+  roomsEl.innerHTML = ROOMS.map(r => {
+    const n = roomWorks(S.view.year, r.n, S.view.artist, 'asc').length;
+    return '<button role="tab" data-room="' + r.n + '" class="' + (S.view.room === r.n ? 'on' : '') + '" aria-selected="' + (S.view.room === r.n) + '">' +
+      r.n + '실<small>' + r.label + '</small></button>';
+  }).join('');
+
+  // 작가 필터
+  const af = $('#artistFilter');
+  const chips = [{ k: 'all', t: '전체' }, { k: 'a1', t: artistLabel('a1') }, { k: 'a2', t: artistLabel('a2') }];
+  af.innerHTML = chips.map(c => {
+    const n = S.artworks.filter(a => c.k === 'all' || a.artist === c.k).length;
+    return '<button role="tab" data-artist-filter="' + c.k + '" class="' + (S.view.artist === c.k ? 'on' : '') + '">' +
+      esc(c.t) + ' <small style="opacity:.6;font-weight:600">' + n + '</small></button>';
+  }).join('');
+
+  // 층 (데스크톱: 세로 엘리베이터 / 좁은 화면: 가로 칩)
+  function floorBtn(y) {
+    const n = years.indexOf(y) + 1;
+    return '<button data-year="' + y + '" class="' + (S.view.year === y ? 'on' : '') + '" aria-label="' + n + '층 ' + y + '년">' +
+      '<span class="fl">' + n + '층</span><span class="yr">' + y + '</span></button>';
+  }
+  const addYr = '<button class="addyr" aria-label="새 연도 층 추가"><span class="fl">＋</span><span class="yr">연도</span></button>';
+  $('#elevator').innerHTML = years.slice().reverse().map(floorBtn).join('') + addYr;
+  $('#floorChips').innerHTML = years.slice().reverse().map(floorBtn).join('') + addYr;
+
+  // 캐릭터
+  const cast = $('#cast');
+  cast.innerHTML = ['dad', 'mom', 'a1', 'a2'].map(k =>
+    '<button data-char="' + k + '" class="' + (S.character === k ? 'on' : '') + '" aria-label="' + esc(personLabel(k)) + '로 걷기">' +
+    avatarSVG(k) + '<span>' + esc(personLabel(k)) + '</span></button>').join('');
+
+  // 모드
+  const view = S.mode === 'view';
+  $('#btnAdd').hidden = view;
+  $('#emptyAdd').hidden = view;
+  $('#viewerBadge').hidden = !view;
+  $$('#mArt .artacts .btn').forEach(b => { if (b.id !== 'artDrive') b.hidden = view; });
+  $$('#dangerSect button').forEach(b => { b.hidden = view; });
+  $$('.addyr').forEach(b => { b.hidden = view; });
+  $('#sheetState').textContent = view ? '관람 전용 링크로 열려 있습니다.' : (S.sheetUrl ? '구글 시트에 연결되어 있습니다.' : '연결하지 않으면 이 기기에만 저장됩니다.');
+
+  // 빈 방
+  const empty = $('#emptyRoom');
+  const hasAnything = S.artworks.some(a => yearOf(a.date) === S.view.year && quarterOf(a.date) === S.view.room);
+  empty.hidden = rw.length > 0;
+  if (!rw.length) {
+    if (hasAnything) {
+      $('#emptyTitle').textContent = '이 방에는 ' + (S.view.artist === 'a1' ? artistLabel('a1') : artistLabel('a2')) + ' 작품이 없어요';
+      $('#emptySub').textContent = '작가를 「전체」로 바꾸면 이 방의 다른 작품을 볼 수 있어요.';
+    } else {
+      $('#emptyTitle').textContent = '이 방은 아직 비어 있어요';
+      $('#emptySub').textContent = S.view.year + '년 ' + ROOMS[S.view.room - 1].label + '에 만든 작품이 여기에 걸려요.';
+    }
+  }
+  updateLinksText();
+  renderRoomStrip(rw);
+  syncScreenButtons();
+  if (S.screen === 'album') renderAlbum();
+  computeCam();
+  dirty = true;
+}
+function renderRoomStrip(list) {
+  const el = $('#roomStrip');
+  if (!el) return;
+  if (!list.length) { el.innerHTML = ''; el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = list.map(a => {
+    const src = artSource(a);
+    return '<button class="rc" data-art="' + a.id + '" aria-label="' + esc(a.title || '작품') + ' 크게 보기">' +
+      (src ? '<img src="' + esc(src) + '" alt="" loading="lazy" />' : '<span class="ph" aria-hidden="true"></span>') +
+      '<b>' + esc(a.title || '(제목 없음)') + '</b></button>';
+  }).join('');
+}
+function avatarSVG(key) {
+  const P = PEOPLE[key];
+  const long = P.style === 'long';
+  return '<svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true">' +
+    '<circle cx="16" cy="16" r="15.2" fill="' + P.shirt + '" opacity=".16"/>' +
+    (long ? '<ellipse cx="16" cy="16" rx="7.2" ry="8.4" fill="' + P.hair + '"/>' : '') +
+    '<circle cx="16" cy="12.6" r="5.1" fill="' + P.skin + '"/>' +
+    (P.style === 'kid'
+      ? '<path d="M10.9 11.6a5.1 5.1 0 0 1 10.2 0c0-3.5-2.1-5.4-5.1-5.4s-5.1 1.9-5.1 5.4z" fill="' + P.hair + '"/>'
+      : '<path d="M10.9 12a5.1 5.1 0 0 1 10.2 0c0-4-2.2-5.8-5.1-5.8S10.9 8 10.9 12z" fill="' + P.hair + '"/>') +
+    '<path d="M5.6 28c1.5-5 5.3-7.2 10.4-7.2S24.9 23 26.4 28z" fill="' + P.shirt + '"/>' +
+    '</svg>';
+}
+function updateLinksText() {
+  const v = buildLink('view');
+  const e = buildLink('edit');
+  $('#viewLinkText').textContent = v || '구글 시트를 먼저 연결해 주세요';
+  $('#editLinkText').textContent = e || '구글 시트를 먼저 연결해 주세요';
+}
+function hideHint() {
+  const h = $('#hint');
+  if (h && !h.classList.contains('off')) { h.classList.add('off'); prefs.hintSeen = true; savePrefs(); }
+}
+
+/* ─────────────────────────── 12. 모달 열고 닫기 ─────────────────────────── */
+function openModal(id) {
+  const m = $(id);
+  if (!m) return;
+  m.classList.add('on');
+  const first = m.querySelector('input:not([type=hidden]),button');
+  if (first && window.innerWidth > 700) setTimeout(() => { try { first.focus(); } catch (e) {} }, 60);
+}
+function closeModal(m) {
+  if (typeof m === 'string') m = $(m);
+  if (!m) return;
+  m.classList.remove('on');
+}
+function closeAll() { $$('.modal.on').forEach(m => m.classList.remove('on')); }
+
+/* ─────────────────────────── 13. 업로드 ─────────────────────────── */
+let upFile = null;
+let upImageEl = null;
+let upEditId = null;
+let upArtist = 'a1';
+
+function openUpload(art) {
+  if (S.mode === 'view') { toast('관람 전용 링크에서는 작품을 올릴 수 없어요'); return; }
+  upEditId = art ? art.id : null;
+  upFile = null; upImageEl = null;
+  $('#upTitle').textContent = art ? '작품 수정' : '작품 올리기';
+  $('#btnSaveArt').textContent = art ? '저장' : '걸기';
+  $('#fDate').value = art ? art.date : todayStr();
+  $('#fTitle').value = art ? art.title || '' : '';
+  $('#fMemo').value = art ? art.memo || '' : '';
+  upArtist = art ? art.artist : 'a1';
+  const pv = $('#preview');
+  pv.removeAttribute('src');
+  const prevSrc = art ? (art.thumb || art.driveThumb || '') : '';
+  $('#drop').classList.toggle('hasimg', !!prevSrc);
+  if (prevSrc) setPreviewSrc(prevSrc);
+  syncArtistPick();
+  $('#upNote').textContent = S.sheetUrl
+    ? '사진은 긴 변 1600px로 정리해 올라가고, 원본은 드라이브 폴더에 함께 저장돼요.'
+    : '지금은 이 기기에만 저장돼요. 구글 시트를 연결하면 원본이 드라이브 폴더에도 저장돼요.';
+  openModal('#mUpload');
+}
+function setPreviewSrc(src) {
+  const pv = $('#preview');
+  if (!src) return;
+  pv.src = src;
+  $('#drop').classList.add('hasimg');
+}
+function syncArtistPick() {
+  $$('#artistPick button').forEach(b => b.classList.toggle('on', b.dataset.artist === upArtist));
+  $('#artistPick button[data-artist="a1"]').textContent = S.settings.artist1 || '아이 1';
+  $('#artistPick button[data-artist="a2"]').textContent = S.settings.artist2 || '아이 2';
+}
+async function saveArtwork() {
+  if (S.mode === 'view') return;
+  const date = $('#fDate').value || todayStr();
+  const title = $('#fTitle').value.trim();
+  const memo = $('#fMemo').value.trim();
+  if (!upEditId && !upFile) { toast('작품 사진을 먼저 골라 주세요'); return; }
+  if (!title) { toast('제목을 적어 주세요'); $('#fTitle').focus(); return; }
+
+  const btn = $('#btnSaveArt');
+  btn.disabled = true;
+  btn.textContent = '저장 중…';
+  try {
+    if (upEditId) {
+      const art = S.artworks.filter(a => a.id === upEditId)[0];
+      if (!art) throw new Error('작품을 찾지 못했습니다');
+      art.date = date; art.artist = upArtist; art.title = title; art.memo = memo;
+      art.updatedAt = nowISO();
+      if (upFile) {
+        const prep = await prepareUpload(upFile);
+        art.thumb = prep.thumb;
+        if (S.sheetUrl && !S.demo) {
+          try {
+            const r = await uploadOriginal(prep.full, art);
+            if (r) { art.driveFileId = r.fileId; art.driveUrl = r.url; art.driveThumb = r.thumbUrl; }
+            else await Pending.put(art.id, prep.full);
+          } catch (e) { await Pending.put(art.id, prep.full); }
+        } else {
+          await Pending.put(art.id, prep.full);
+        }
+      }
+    } else {
+      const prep = await prepareUpload(upFile);
+      const art = {
+        id: uid(), date: date, artist: upArtist, title: title, memo: memo,
+        thumb: prep.thumb, driveFileId: '', driveUrl: '', driveThumb: '',
+        createdAt: nowISO(), updatedAt: nowISO()
+      };
+      if (S.sheetUrl && !S.demo) {
+        setSync('wait', '원본 올리는 중…');
+        try {
+          const r = await uploadOriginal(prep.full, art);
+          if (r) { art.driveFileId = r.fileId; art.driveUrl = r.url; art.driveThumb = r.thumbUrl; setSync('on', '시트에 저장됨'); }
+          else { await Pending.put(art.id, prep.full); }
+        } catch (e) {
+          await Pending.put(art.id, prep.full);
+          setSync('err', '원본은 이 기기에 보관');
+        }
+      } else {
+        await Pending.put(art.id, prep.full);
+      }
+      S.artworks.push(art);
+    }
+    S.view.year = yearOf(date);
+    S.view.room = quarterOf(date);
+    S.view.artist = 'all';
+    S.view.hall = 1;
+    saveLocal();
+    char.path = [];
+    char.x = 4.8; char.y = 6.6;
+    closeModal('#mUpload');
+    renderChrome();
+    if (S.sheetUrl) schedulePush(300);
+    toast(upEditId ? '작품을 고쳤어요' : '작품을 걸었어요');
+  } catch (err) {
+    toast('저장하지 못했습니다: ' + (err && err.message ? err.message : err));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = upEditId ? '저장' : '걸기';
+  }
+}
+function prepareUpload(file) {
+  return fileToImage(file).then(img => {
+    const thumb = resizeDataURL(img, THUMB_MAX_SIDE, THUMB_QUALITY, 48000);
+    const full = resizeDataURL(img, 1600, 0.86, 900000);
+    return { thumb: thumb, full: full };
+  });
+}
+async function uploadOriginal(fullDataUrl, art) {
+  const year = yearOf(art.date), room = quarterOf(art.date);
+  const res = await postJSON({
+    action: 'upload', app: 'kidsgallery', version: APP_VERSION,
+    image: fullDataUrl, date: art.date, year: year, room: room,
+    artist: art.artist, title: art.title || ''
+  }, 90000);
+  if (!res || res.ok !== true) throw new Error((res && res.error) || '업로드 실패');
+  return { fileId: res.fileId || '', url: res.url || '', thumbUrl: res.thumbUrl || '' };
+}
+
+/* ─────────────────────────── 14. 시트 동기화 ─────────────────────────── */
+function normalizeArt(a) {
+  return {
+    id: String(a.id || uid()),
+    date: String(a.date || '').slice(0, 10),
+    artist: a.artist === 'a2' ? 'a2' : 'a1',
+    title: String(a.title || ''),
+    memo: String(a.memo || ''),
+    thumb: a.thumb || '',
+    driveFileId: a.driveFileId || '',
+    driveUrl: a.driveUrl || '',
+    driveThumb: a.driveThumb || a.thumbUrl || '',
+    createdAt: a.createdAt || nowISO(),
+    updatedAt: a.updatedAt || a.createdAt || nowISO()
+  };
+}
+function mergeArtworks(local, remote) {
+  const map = new Map();
+  local.forEach(a => map.set(a.id, Object.assign({}, a)));
+  remote.forEach(r0 => {
+    const r = normalizeArt(r0);
+    const l = map.get(r.id);
+    if (!l) { map.set(r.id, r); return; }
+    const newerRemote = String(r.updatedAt) > String(l.updatedAt);
+    const merged = newerRemote ? Object.assign({}, l, r) : Object.assign({}, r, l);
+    merged.thumb = merged.thumb || l.thumb || r.thumb;
+    merged.driveFileId = merged.driveFileId || l.driveFileId || r.driveFileId;
+    merged.driveThumb = merged.driveThumb || l.driveThumb || r.driveThumb;
+    merged.driveUrl = merged.driveUrl || l.driveUrl || r.driveUrl;
+    merged.title = merged.title || l.title || r.title;
+    merged.memo = merged.memo || l.memo || r.memo;
+    map.set(r.id, merged);
+  });
+  return Array.from(map.values()).filter(a => a.date).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+}
+let pushTimer = 0;
+function schedulePush(delay) {
+  if (!S.sheetUrl || S.demo || S.mode === 'view') return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => { pushSave(); }, delay || 1200);
+}
+function pushSave() {
+  if (!S.sheetUrl || S.demo || S.mode === 'view') return Promise.resolve();
+  setSync('wait', '저장 중…');
+  const payload = {
+    action: 'save', app: 'kidsgallery', version: APP_VERSION,
+    settings: S.settings,
+    artworks: S.artworks.map(a => ({
+      id: a.id, date: a.date, artist: a.artist, title: a.title, memo: a.memo,
+      driveFileId: a.driveFileId || '', driveUrl: a.driveUrl || '', thumbUrl: a.driveThumb || '',
+      createdAt: a.createdAt, updatedAt: a.updatedAt
+    }))
+  };
+  return postJSON(payload, 60000).then(res => {
+    if (res && res.ok) { setSync('on', '시트에 저장됨'); }
+    else if (res && res.error && res.error.indexOf('빈 목록') >= 0) {
+      // 시트에 기록이 남아 있는데 앱이 빈 목록을 보낸 경우 — 안전장치가 막았습니다.
+      setSync('err', '시트에 기록이 남아 있음');
+      toast('마지막 작품은 구글 시트에서 직접 지워 주세요');
+    } else {
+      setSync('err', '시트 저장 실패');
+      if (res && res.error) console.warn('save:', res.error);
+    }
+    return res;
+  }).catch(() => { setSync('err', '시트 저장 실패'); });
+}
+async function connectSheet(url, silent) {
+  const prev = S.sheetUrl;
+  S.sheetUrl = url;
+  setSync('wait', '불러오는 중…');
+  try {
+    const res = await jsonp('ping', '');
+    if (!res || res.ok !== true) throw new Error((res && res.error) || '연결 확인 실패');
+    const data = await jsonp('load', '');
+    if (!data || data.ok !== true) throw new Error((data && data.error) || '불러오기 실패');
+    const remoteArts = Array.isArray(data.artworks) ? data.artworks.map(normalizeArt) : [];
+    S.artworks = mergeArtworks(S.artworks, remoteArts);
+    if (data.settings && typeof data.settings === 'object') {
+      const clean = {};
+      Object.keys(DEFAULT_SETTINGS).forEach(k => {
+        if (data.settings[k] != null && String(data.settings[k]).trim()) clean[k] = String(data.settings[k]).trim();
+      });
+      S.settings = Object.assign({}, DEFAULT_SETTINGS, clean);
+    }
+    S.demo = false;
+    saveLocal();
+    renderChrome();
+    setSync('on', '시트 연결됨');
+    if (!silent) toast('시트와 연결했어요 · ' + S.artworks.length + '점');
+    // 기기에만 있던 원본이 있으면 드라이브로 옮깁니다
+    flushPending();
+    schedulePush(400);
+    return true;
+  } catch (err) {
+    S.sheetUrl = prev;
+    setSync('err', '연결 실패');
+    if (!silent) toast('연결하지 못했습니다: ' + (err && err.message ? err.message : err));
+    return false;
+  }
+}
+async function flushPending() {
+  if (!S.sheetUrl || S.demo || S.mode === 'view') return;
+  const items = await Pending.all();
+  for (const it of items) {
+    const art = S.artworks.filter(a => a.id === it.id)[0];
+    if (!art) { await Pending.del(it.id); continue; }
+    if (art.driveFileId) { await Pending.del(it.id); continue; }
+    try {
+      const r = await uploadOriginal(it.data, art);
+      if (r) {
+        art.driveFileId = r.fileId; art.driveUrl = r.url; art.driveThumb = r.thumbUrl;
+        art.updatedAt = nowISO();
+        await Pending.del(it.id);
+      }
+    } catch (e) { /* 다음 기회에 */ }
+  }
+  saveLocal(); renderChrome(); schedulePush(300);
+}
+async function autoConnect() {
+  if (!S.sheetUrl || S.demo) return;
+  setSync('wait', '불러오는 중…');
+  try {
+    const data = await jsonp('load', '');
+    if (data && data.ok) {
+      const remoteArts = Array.isArray(data.artworks) ? data.artworks.map(normalizeArt) : [];
+      S.artworks = mergeArtworks(S.artworks, remoteArts);
+      if (data.settings && typeof data.settings === 'object') {
+        const clean = {};
+        Object.keys(DEFAULT_SETTINGS).forEach(k => {
+          if (data.settings[k] != null && String(data.settings[k]).trim()) clean[k] = String(data.settings[k]).trim();
+        });
+        S.settings = Object.assign({}, DEFAULT_SETTINGS, clean);
+      }
+      saveLocal();
+      renderChrome();
+      setSync('on', '시트 연결됨');
+      flushPending();
+    } else {
+      setSync('err', '연결 확인 필요');
+    }
+  } catch (e) {
+    setSync('err', '연결 확인 필요');
+  }
+}
+
+/* ─────────────────────────── 15. 내보내기 ─────────────────────────── */
+function download(filename, text, mime) {
+  const blob = new Blob([text], { type: mime || 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+}
+function stamp() {
+  const d = new Date();
+  return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '-' + pad2(d.getHours()) + pad2(d.getMinutes());
+}
+function exportJSON() {
+  const real = S.artworks.filter(a => !a.demo);
+  if (!real.length) { toast('내보낼 실제 작품이 없어요'); return; }
+  const payload = {
+    app: 'kids-gallery', version: APP_VERSION, exportedAt: nowISO(),
+    settings: S.settings,
+    artworks: real.map(a => ({
+      id: a.id, date: a.date, year: yearOf(a.date), room: quarterOf(a.date),
+      artist: a.artist, title: a.title, memo: a.memo,
+      driveFileId: a.driveFileId, driveUrl: a.driveUrl, thumbUrl: a.driveThumb,
+      createdAt: a.createdAt, updatedAt: a.updatedAt
+    }))
+  };
+  download('가족미술관-백업-' + stamp() + '.json', JSON.stringify(payload, null, 2), 'application/json');
+  toast('JSON 백업을 내려받았어요');
+}
+function csvCell(v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }
+function exportCSV() {
+  const head = ['id', '전시날짜', '연도', '전시실', '작가', '제목', '메모', '드라이브파일ID', '드라이브링크', '썸네일링크', '등록일'];
+  const real = S.artworks.filter(a => !a.demo);
+  if (!real.length) { toast('내보낼 실제 작품이 없어요'); return; }
+  const rows = real.slice().sort((a, b) => String(a.date).localeCompare(String(b.date))).map(a => [
+    a.id, a.date, yearOf(a.date), quarterOf(a.date) + '실', artistLabel(a.artist), a.title, a.memo,
+    a.driveFileId || '', a.driveUrl || '', a.driveThumb || '', a.createdAt || ''
+  ]);
+  const csv = '\ufeff' + [head].concat(rows).map(r => r.map(csvCell).join(',')).join('\r\n');
+  download('가족미술관-목록-' + stamp() + '.csv', csv, 'text/csv;charset=utf-8');
+  toast('CSV 목록을 내려받았어요');
+}
+function importJSON(file) {
+  const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      const o = JSON.parse(String(rd.result));
+      const list = Array.isArray(o) ? o : (o.artworks || []);
+      if (!Array.isArray(list) || !list.length) { toast('가져올 작품이 없습니다'); return; }
+      const cleaned = list.filter(a => a && a.id && a.date).map(normalizeArt);
+      S.artworks = mergeArtworks(S.artworks, cleaned);
+      if (o.settings) {
+        const clean = {};
+        Object.keys(DEFAULT_SETTINGS).forEach(k => {
+          if (o.settings[k] != null && String(o.settings[k]).trim()) clean[k] = String(o.settings[k]).trim();
+        });
+        S.settings = Object.assign({}, DEFAULT_SETTINGS, clean);
+      }
+      saveLocal(); renderChrome();
+      if (S.sheetUrl) schedulePush(400);
+      toast(cleaned.length + '점을 가져왔어요');
+    } catch (e) { toast('JSON을 읽지 못했습니다'); }
+  };
+  rd.readAsText(file);
+}
+
+/* ─────────────────────────── 16. 작품 보기 ─────────────────────────── */
+let artOrder = [];
+let artIndex = 0;
+function openArtwork(id, list) {
+  const src = (list && list.length) ? list : roomWorks(S.view.year, S.view.room, S.view.artist, 'asc');
+  artOrder = src.map(a => a.id);
+  artIndex = Math.max(0, artOrder.indexOf(id));
+  renderArtwork();
+  openModal('#mArt');
+  hideHint();
+}
+function currentArt() {
+  const id = artOrder[artIndex];
+  return S.artworks.filter(a => a.id === id)[0] || null;
+}
+function renderArtwork() {
+  const a = currentArt();
+  if (!a) { closeModal('#mArt'); return; }
+  const img = $('#artImg');
+  const view = $('.artview');
+  $$('.artview .ph').forEach(n => n.remove());
+  // 큰 화면용: 드라이브 원본 → 기기 미리보기 순서로 시도합니다.
+  const chain = [];
+  if (a.driveFileId) chain.push('https://lh3.googleusercontent.com/d/' + a.driveFileId + '=w1600');
+  [artSource(a), a.driveThumb].forEach(u => { if (u && chain.indexOf(u) < 0) chain.push(u); });
+  img.onerror = null;
+  if (!chain.length) {
+    img.removeAttribute('src'); img.style.display = 'none';
+    const d = document.createElement('div');
+    d.className = 'ph'; d.textContent = '사진을 불러오지 못했어요';
+    view.appendChild(d);
+  } else {
+    let k = 0;
+    img.style.display = '';
+    img.onerror = () => {
+      k += 1;
+      if (k < chain.length) img.src = chain[k];
+      else img.style.display = 'none';
+    };
+    img.src = chain[0];
+  }
+  img.alt = a.title || '작품';
+  $('#artArtist').textContent = artistLabel(a.artist);
+  $('#artDate').textContent = fmtDate(a.date) + ' · ' + quarterOf(a.date) + '실 (' + ROOMS[quarterOf(a.date) - 1].label + ')';
+  $('#artDate').title = a.date;
+  $('#artPos').textContent = (artIndex + 1) + ' / ' + artOrder.length;
+  $('#artTitle').textContent = a.title || '(제목 없음)';
+  $('#artMemo').textContent = a.memo || '';
+  const first = artIndex <= 0, last = artIndex >= artOrder.length - 1;
+  $('#artPrev').disabled = first;
+  $('#artNext').disabled = last;
+  $('#artPrev2').disabled = first;
+  $('#artNext2').disabled = last;
+  const dv = $('#artDrive');
+  dv.hidden = !a.driveUrl;
+  if (a.driveUrl) dv.href = a.driveUrl;
+  $('#artEdit').hidden = S.mode === 'view';
+  $('#artDel').hidden = S.mode === 'view';
+}
+function stepArt(d) {
+  const n = artIndex + d;
+  if (n < 0 || n >= artOrder.length) return;
+  artIndex = n;
+  renderArtwork();
+}
+
+/* ─────────────────────────── 17. 큰 사진 앨범 (어른용) ─────────────────────────── */
+function albumList() {
+  if (S.albumScope === 'all') {
+    return S.artworks.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  }
+  return roomWorks(S.view.year, S.view.room, S.view.artist, 'asc');
+}
+function bigImageSrc(a) {
+  if (a.driveFileId) return 'https://lh3.googleusercontent.com/d/' + a.driveFileId + '=w1600';
+  return artSource(a) || '';
+}
+function albumCardHtml(a) {
+  const src = bigImageSrc(a);
+  const fb = artSource(a);
+  return '<button class="acard" data-art="' + a.id + '">' +
+    '<span class="shot">' + (src
+      ? '<img src="' + esc(src) + '" alt="" loading="lazy"' + (fb && fb !== src ? ' data-fb="' + esc(fb) + '"' : '') + ' />'
+      : '') + '</span>' +
+    '<span class="tx"><b>' + esc(a.title || '(제목 없음)') + '</b>' +
+    '<span class="meta">' + esc(artistLabel(a.artist)) + ' · ' + esc(fmtDate(a.date)) +
+    ' · ' + quarterOf(a.date) + '실</span>' +
+    (a.memo ? '<span class="memo">' + esc(a.memo) + '</span>' : '') +
+    '</span></button>';
+}
+function renderAlbum() {
+  const g = $('#albumGrid');
+  if (!g) return;
+  const list = albumList();
+  $('#albumCount').textContent = list.length + '점' + (S.albumScope === 'all' ? ' · 전체' : '');
+  if (!list.length) {
+    g.innerHTML = '<p class="album-empty">아직 걸린 작품이 없어요.<br>미술관에서 <b>＋ 작품 올리기</b>로 첫 작품을 걸어 주세요.</p>';
+  } else {
+    g.innerHTML = list.map(albumCardHtml).join('');
+    // 드라이브 원본 주소가 막히면 기기 미리보기로 바꿔 보여 줍니다.
+    $$('img[data-fb]', g).forEach(img => {
+      img.addEventListener('error', () => {
+        const fb = img.getAttribute('data-fb');
+        if (fb) { img.removeAttribute('data-fb'); img.src = fb; }
+      });
+    });
+  }
+  syncScreenButtons();
+}
+function syncScreenButtons() {
+  $$('#viewTabs [data-screen]').forEach(b => {
+    const on = b.dataset.screen === S.screen;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  $$('#albumScope [data-scope]').forEach(b => {
+    const on = b.dataset.scope === S.albumScope;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+}
+function setScreen(name) {
+  S.screen = name === 'album' ? 'album' : 'museum';
+  document.body.classList.toggle('album-mode', S.screen === 'album');
+  closeAll();
+  if (S.screen === 'album') {
+    renderAlbum();
+    $('#albumView').scrollTop = 0;
+  } else {
+    computeCam();
+    dirty = true;
+  }
+  syncScreenButtons();
+}
+
+/* ─────────────────────────── 18. 데모 ─────────────────────────── */
+function demoDrawing(i, title) {
+  const c = document.createElement('canvas');
+  c.width = 560; c.height = 420;
+  const g = c.getContext('2d');
+  g.fillStyle = '#FFFDF6'; g.fillRect(0, 0, 560, 420);
+  // 종이 질감
+  g.fillStyle = 'rgba(210,190,160,.10)';
+  for (let k = 0; k < 40; k++) {
+    const x = (k * 97) % 560, y = (k * 53) % 420;
+    g.fillRect(x, y, 2, 2);
+  }
+  let seed = i * 7919 + 104729;
+  const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  const palette = ['#E2703A', '#3C8DAD', '#2A9D8F', '#E9C46A', '#8E6BA8', '#D96C8A'];
+  g.lineCap = 'round'; g.lineJoin = 'round';
+
+  const stroke = (pts, color, w) => {
+    g.strokeStyle = color; g.lineWidth = w || 7;
+    g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+    for (let k = 1; k < pts.length; k++) g.lineTo(pts[k][0], pts[k][1]);
+    g.stroke();
+  };
+  const crayon = (fn, color, w) => {
+    for (let k = 0; k < 2; k++) {
+      g.save(); g.translate(rnd() * 2 - 1, rnd() * 2 - 1);
+      g.strokeStyle = color; g.globalAlpha = k ? 0.5 : 0.95; g.lineWidth = w || 8;
+      fn(g); g.restore();
+    }
+  };
+
+  const kind = i % 4;
+  if (kind === 0) { // 해와 언덕
+    crayon(g => { g.beginPath(); g.arc(160, 130, 62, 0, Math.PI * 2); g.stroke(); }, '#E9A227', 9);
+    for (let k = 0; k < 10; k++) {
+      const a = k / 10 * Math.PI * 2;
+      stroke([[160 + Math.cos(a) * 82, 130 + Math.sin(a) * 82], [160 + Math.cos(a) * 108, 130 + Math.sin(a) * 108]], '#E9A227', 7);
+    }
+    crayon(g => { g.beginPath(); g.moveTo(0, 360); g.quadraticCurveTo(180, 250, 380, 360); g.stroke(); }, '#5B9E63', 10);
+    crayon(g => { g.beginPath(); g.moveTo(220, 360); g.quadraticCurveTo(420, 270, 560, 350); g.stroke(); }, '#76B56F', 10);
+    g.fillStyle = '#D96C8A';
+    for (let k = 0; k < 6; k++) {
+      const x = 60 + rnd() * 440, y = 330 + rnd() * 60;
+      g.beginPath(); g.arc(x, y, 7, 0, 7); g.fill();
+    }
+  } else if (kind === 1) { // 집
+    crayon(g => { g.rect(150, 210, 250, 170); g.stroke(); }, '#3C8DAD', 9);
+    crayon(g => { g.beginPath(); g.moveTo(120, 215); g.lineTo(275, 110); g.lineTo(430, 215); g.closePath(); g.stroke(); }, '#C4553B', 9);
+    g.fillStyle = '#E9C46A'; g.fillRect(245, 285, 60, 95);
+    g.strokeStyle = '#8A6A3C'; g.lineWidth = 5; g.strokeRect(245, 285, 60, 95);
+    g.fillStyle = '#8FBFE0'; g.fillRect(180, 250, 55, 50); g.fillRect(315, 250, 55, 50);
+    crayon(g => { g.beginPath(); g.arc(460, 120, 34, 0, Math.PI * 2); g.stroke(); }, '#E9A227', 8);
+    g.fillStyle = '#5B9E63'; g.fillRect(0, 380, 560, 40);
+  } else if (kind === 2) { // 고양이
+    crayon(g => { g.beginPath(); g.ellipse(280, 260, 95, 78, 0, 0, 7); g.stroke(); }, '#8E6BA8', 9);
+    crayon(g => { g.beginPath(); g.arc(280, 175, 62, 0, 7); g.stroke(); }, '#8E6BA8', 9);
+    stroke([[232, 140], [240, 96], [268, 128]], '#8E6BA8', 8);
+    stroke([[328, 140], [320, 96], [292, 128]], '#8E6BA8', 8);
+    g.fillStyle = '#3B302A';
+    g.beginPath(); g.arc(258, 172, 7, 0, 7); g.fill();
+    g.beginPath(); g.arc(302, 172, 7, 0, 7); g.fill();
+    stroke([[280, 188], [272, 196], [288, 196], [280, 188]], '#D96C8A', 5);
+    for (let k = 0; k < 3; k++) {
+      stroke([[340, 250], [430, 232 + k * 16], [470, 240 + k * 14]], '#8E6BA8', 6);
+    }
+    crayon(g => { g.beginPath(); g.arc(280, 330, 10, 0, 7); g.stroke(); }, '#E2703A', 6);
+  } else { // 가족/무지개
+    const cols = ['#E2703A', '#E9C46A', '#5B9E63', '#3C8DAD', '#8E6BA8'];
+    cols.forEach((col, k) => {
+      crayon(g => { g.beginPath(); g.arc(280, 330, 150 - k * 17, Math.PI, Math.PI * 2); g.stroke(); }, col, 12);
+    });
+    [[190, 300, '#E2703A'], [280, 296, '#3C8DAD'], [370, 300, '#5B9E63']].forEach(p => {
+      crayon(g => { g.beginPath(); g.arc(p[0], p[1], 22, 0, 7); g.stroke(); }, p[2], 7);
+      crayon(g => { g.beginPath(); g.arc(p[0], p[1] + 22, 26, Math.PI * 0.1, Math.PI * 0.9); g.stroke(); }, p[2], 6);
+    });
+  }
+  // 아이 그림 느낌의 이름표 자국 (가짜 낙서)
+  g.globalAlpha = 0.5;
+  g.strokeStyle = '#B9A896'; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(430, 380); g.quadraticCurveTo(470, 366, 505, 382); g.stroke();
+  g.globalAlpha = 1;
+  return c.toDataURL('image/jpeg', 0.74);
+}
+function loadDemo() {
+  S.demo = true;
+  if (S.artworks.length) { S.demo = false; return; }   // 이미 실제 작품이 있으면 예시는 넣지 않습니다
+  let items = [
+    ['2026-01-09', 'a1', '겨울 나무', '나뭇가지를 하나씩 그렸어요'],
+    ['2026-02-11', 'a1', '무지개 마을', '크레파스로 하늘을 칠했어요'],
+    ['2026-02-24', 'a2', '해님 인사', '동그라미를 크게 그렸어요'],
+    ['2026-03-09', 'a1', '우리 집', '지붕을 빨갛게 했어요'],
+    ['2026-04-18', 'a2', '고양이 산책', '꼬리가 아주 길어요'],
+    ['2026-05-06', 'a1', '가족 그리기', '셋이 손을 잡았어요'],
+    ['2026-06-18', 'a2', '구름 위에서', '물감을 손으로 찍었어요'],
+    ['2026-07-22', 'a1', '여름 바다', '파랑색을 많이 썼어요'],
+    ['2026-08-30', 'a2', '나비와 꽃', '나비를 다섯 마리 그렸어요'],
+    ['2026-10-12', 'a1', '가을 산', '잎이 떨어지는 모습'],
+    ['2026-11-04', 'a2', '나무와 새', '새가 지붕에 앉아 있어요'],
+    ['2027-01-15', 'a2', '눈 오는 날', '하얀 점을 많이 찍었어요'],
+    ['2027-02-02', 'a1', '언덕 위 해', '해가 웃고 있어요'],
+    ['2027-03-20', 'a1', '봄 마당', '꽃을 손가락으로 찍었어요']
+  ];
+  // ?demo=1&fill=N — 한 방(26칸)을 넘기는 경우까지 시험해 볼 수 있게 예시 작품을 N점 만듭니다.
+  const fillN = clamp(parseInt(new URLSearchParams(location.search).get('fill') || '0', 10) || 0, 0, 60);
+  if (fillN > 0) {
+    items = [];
+    for (let i = 0; i < fillN; i++) {
+      const off = Math.floor(i * 89 / Math.max(1, fillN - 1));
+      const dt = new Date(2026, 0, 1 + off);
+      const ds = dt.getFullYear() + '-' + pad2(dt.getMonth() + 1) + '-' + pad2(dt.getDate());
+      items.push([ds, i % 2 ? 'a2' : 'a1', '예시 작품 ' + (i + 1), '한 방에 몇 점까지 걸리는지 보는 예시 그림']);
+    }
+  }
+  S.artworks = items.map((it, i) => ({
+    id: 'demo' + (i + 1),
+    date: it[0], artist: it[1], title: it[2], memo: it[3],
+    thumb: demoDrawing(i, it[2]), demo: true,
+    driveFileId: '', driveUrl: '', driveThumb: '',
+    createdAt: it[0] + 'T10:00:00.000Z', updatedAt: it[0] + 'T10:00:00.000Z'
+  }));
+  const y = new URLSearchParams(location.search).get('y');
+  const r = new URLSearchParams(location.search).get('r');
+  S.view.year = y ? parseInt(y, 10) : 2026;
+  S.view.room = r ? parseInt(r, 10) : 1;
+}
+
+/* ─────────────────────────── 19. 이벤트 ─────────────────────────── */
+function switchRoom(room) {
+  if (S.view.room === room) return;
+  S.view.room = room;
+  S.view.hall = 1;
+  anim.fade = 1;
+  char.path = [];
+  saveLocal();
+  renderChrome();
+}
+function switchYear(year) {
+  const years = floorYears();
+  if (years.indexOf(year) < 0) years.push(year);
+  S.view.year = year;
+  S.view.hall = 1;
+  anim.fade = 1;
+  char.path = [];
+  saveLocal();
+  renderChrome();
+}
+function bindEvents() {
+  canvas.addEventListener('pointerdown', e => {
+    const r = canvas.getBoundingClientRect();
+    const px = e.clientX - r.left, py = e.clientY - r.top;
+    const id = hitTest(px, py);
+    if (id) { openArtwork(id); return; }
+    const wp = unproject(px, py);
+    if (wp) walkTo(wp);
+  });
+  window.addEventListener('resize', () => { resize(); renderChrome(); });
+  window.addEventListener('orientationchange', () => setTimeout(() => { resize(); renderChrome(); }, 250));
+  window.addEventListener('hashchange', () => {
+    const h = parseHash();
+    if (h) {
+      S.mode = h.mode;
+      if (h.url) S.sheetUrl = h.url;
+      renderChrome();
+      if (S.sheetUrl) autoConnect();
+    }
+  });
+
+  document.addEventListener('click', e => {
+    const t = e.target.closest('[data-close]');
+    if (t) { const m = t.closest('.modal'); if (m) closeModal(m); }
+    const roomBtn = e.target.closest('#rooms [data-room]');
+    if (roomBtn) { switchRoom(parseInt(roomBtn.dataset.room, 10)); return; }
+    const af = e.target.closest('#artistFilter [data-artist-filter]');
+    if (af) {
+      S.view.artist = af.dataset.artistFilter;
+      S.view.hall = 1;
+      char.path = [];
+      saveLocal(); renderChrome();
+      return;
+    }
+    const yr = e.target.closest('[data-year]');
+    if (yr) { switchYear(parseInt(yr.dataset.year, 10)); return; }
+    if (e.target.closest('.addyr')) {
+      if (S.mode === 'view') { toast('관람 전용에서는 층을 추가할 수 없어요'); return; }
+      const years = floorYears();
+      const next = Math.max.apply(null, years) + 1;
+      S.extraYears.push(next);
+      saveLocal();
+      switchYear(next);
+      toast(next + '년 층을 열었어요');
+      return;
+    }
+    const ch = e.target.closest('#cast [data-char]');
+    if (ch) {
+      S.character = ch.dataset.char;
+      saveLocal(); renderChrome();
+      toast(personLabel(S.character) + '로 걸어요');
+      return;
+    }
+    const vt = e.target.closest('#viewTabs [data-screen]');
+    if (vt) { setScreen(vt.dataset.screen); return; }
+    const sc = e.target.closest('#albumScope [data-scope]');
+    if (sc) { S.albumScope = sc.dataset.scope; renderAlbum(); return; }
+    const ac = e.target.closest('#albumGrid [data-art]');
+    if (ac) { openArtwork(ac.dataset.art, albumList()); return; }
+    const hb = e.target.closest('#halls [data-hall]');
+    if (hb) { S.view.hall = parseInt(hb.dataset.hall, 10) || 1; saveLocal(); renderChrome(); return; }
+    const rc = e.target.closest('#roomStrip [data-art]');
+    if (rc) { openArtwork(rc.dataset.art); return; }
+    const ap = e.target.closest('#artistPick [data-artist]');
+    if (ap) { upArtist = ap.dataset.artist; syncArtistPick(); return; }
+
+    if (e.target.closest('#btnAdd') || e.target.closest('#emptyAdd')) { openUpload(null); return; }
+    if (e.target.closest('#btnAlbum')) { setScreen('album'); return; }
+    if (e.target.closest('#btnShare')) { renderChrome(); openModal('#mShare'); return; }
+    if (e.target.closest('#btnSettings')) { openSettings(); return; }
+    if (e.target.closest('#btnDemoClear')) {
+      S.demo = false; S.artworks = []; S.view.year = new Date().getFullYear(); S.view.room = 1;
+      S.extraYears = [];
+      saveLocal(); renderChrome(); toast('예시 작품을 지웠어요');
+      closeModal('#mSettings');
+      return;
+    }
+    if (e.target.closest('#artPrev') || e.target.closest('#artPrev2')) { stepArt(-1); return; }
+    if (e.target.closest('#artNext') || e.target.closest('#artNext2')) { stepArt(1); return; }
+    if (e.target.closest('#artEdit')) {
+      const a = currentArt();
+      closeModal('#mArt');
+      if (a) openUpload(a);
+      return;
+    }
+    if (e.target.closest('#artDel')) { deleteCurrent(); return; }
+    if (e.target.closest('#copyView')) {
+      const link = buildLink('view');
+      if (!link) { toast('구글 시트를 먼저 연결해 주세요'); return; }
+      copyText(link).then(() => toast('관람용 링크를 복사했어요')).catch(() => toast('복사하지 못했습니다'));
+      return;
+    }
+    if (e.target.closest('#copyEdit')) {
+      const link = buildLink('edit');
+      if (!link) { toast('구글 시트를 먼저 연결해 주세요'); return; }
+      copyText(link).then(() => toast('편집용 링크를 복사했어요')).catch(() => toast('복사하지 못했습니다'));
+      return;
+    }
+    if (e.target.closest('#btnSaveArt')) { saveArtwork(); return; }
+    if (e.target.closest('#btnExportJson')) { exportJSON(); return; }
+    if (e.target.closest('#btnExportCsv')) { exportCSV(); return; }
+    if (e.target.closest('#btnConnect')) {
+      const url = ($('#sSheet').value || '').trim();
+      if (!url || !/^https?:\/\/.+/.test(url)) { toast('웹 앱 주소를 확인해 주세요'); return; }
+      connectSheet(url, false).then(ok => { if (ok) { closeModal('#mSettings'); openModal('#mSettings'); } });
+      return;
+    }
+    if (e.target.closest('#btnDisconnect')) {
+      S.sheetUrl = ''; saveLocal(); setSync('off', '이 기기에 저장');
+      try { history.replaceState(null, '', pageBase()); } catch (err) {}
+      toast('시트 연결을 끊었어요'); renderChrome();
+      return;
+    }
+    if (e.target.closest('#btnSaveSettings')) { saveSettings(); return; }
+    if (e.target.closest('#btnReset')) {
+      if (!confirm('이 기기에 저장된 작품 목록을 모두 지울까요?\n드라이브 원본 사진은 지워지지 않습니다.')) return;
+      S.artworks = []; S.extraYears = []; S.demo = false;
+      try { localStorage.removeItem(LS_KEY); } catch (e) {}
+      Pending.all().then(items => items.forEach(i => Pending.del(i.id)));
+      renderChrome(); toast('이 기기 기록을 지웠어요');
+      return;
+    }
+  });
+
+  $('#drop').addEventListener('click', () => { if (S.mode === 'view') return; $('#fileInput').click(); });
+  $('#fileInput').addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    upFile = f;
+    const url = URL.createObjectURL(f);
+    setPreviewSrc(url);
+  });
+  $('#importInput').addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0];
+    if (f) importJSON(f);
+    e.target.value = '';
+  });
+  $$('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(m); }));
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if ($('.modal.on')) { closeAll(); return; }
+      if (S.screen === 'album') { setScreen('museum'); return; }
+      return;
+    }
+    if ($('.modal.on')) return;
+    const map = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+    if (map[e.key]) {
+      e.preventDefault();
+      const v = dirVec(map[e.key]);
+      hold = v;
+      setTimeout(() => { if (hold === v) hold = null; }, 220);
+    }
+  });
+
+  // D-pad
+  const pad = $('#pad');
+  $$('#pad [data-dir]').forEach(b => {
+    const dir = b.dataset.dir;
+    const start = e => {
+      e.preventDefault();
+      hold = dirVec(dir);
+      hideHint();
+      try { b.setPointerCapture && e.pointerId != null && b.setPointerCapture(e.pointerId); } catch (err) {}
+    };
+    const stop = () => { if (hold && hold.dir === dir) hold = null; };
+    b.addEventListener('pointerdown', start);
+    b.addEventListener('pointerup', stop);
+    b.addEventListener('pointercancel', stop);
+    b.addEventListener('pointerleave', stop);
+    b.addEventListener('contextmenu', e => e.preventDefault());
+  });
+  $('#padToggle').addEventListener('click', () => {
+    pad.classList.toggle('collapsed');
+    prefs.pad = pad.classList.contains('collapsed') ? 'off' : 'on';
+    savePrefs();
+    computeCam(); dirty = true;
+  });
+
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) dirty = true; });
+}
+function dirVec(dir) {
+  const k = Math.SQRT1_2;
+  const v = {
+    up: { x: -k, y: -k }, down: { x: k, y: k },
+    left: { x: -k, y: k }, right: { x: k, y: -k }
+  }[dir] || { x: 0, y: 0 };
+  v.dir = dir;
+  return v;
+}
+
+function openSettings() {
+  const view = S.mode === 'view';
+  $('#sTitle').value = S.settings.museumTitle || '';
+  $('#sArtist1').value = S.settings.artist1 || '';
+  $('#sArtist2').value = S.settings.artist2 || '';
+  $('#sDad').value = S.settings.dadName || '';
+  $('#sMom').value = S.settings.momName || '';
+  $('#sSheet').value = S.sheetUrl || '';
+  $('#sSheet').closest('.sect').hidden = view;
+  $('#sheetState').textContent = view ? '관람 전용 링크로 열려 있습니다.' :
+    (S.sheetUrl ? '구글 시트에 연결되어 있습니다.' : '연결하지 않으면 이 기기에만 저장됩니다.');
+  $('#btnConnect').hidden = view;
+  $('#btnDisconnect').hidden = view;
+  $('#btnDemoClear').hidden = !S.demo || view;
+  $('#sSheet').closest('label').hidden = view;
+  $('#btnSaveSettings').hidden = view;
+  openModal('#mSettings');
+  updateLinksText();
+}
+function saveSettings() {
+  S.settings.museumTitle = ($('#sTitle').value || '').trim() || '우리 가족 미술관';
+  S.settings.artist1 = ($('#sArtist1').value || '').trim() || '아이 1';
+  S.settings.artist2 = ($('#sArtist2').value || '').trim() || '아이 2';
+  S.settings.dadName = ($('#sDad').value || '').trim() || '아빠';
+  S.settings.momName = ($('#sMom').value || '').trim() || '엄마';
+  const url = ($('#sSheet').value || '').trim();
+  if (url && url !== S.sheetUrl) S.sheetUrl = url;
+  saveLocal();
+  renderChrome();
+  if (S.sheetUrl) schedulePush(300);
+  closeModal('#mSettings');
+  toast('저장했어요');
+}
+function deleteCurrent() {
+  if (S.mode === 'view') { toast('관람 전용에서는 삭제할 수 없어요'); return; }
+  const a = currentArt();
+  if (!a) return;
+  if (!confirm('「' + (a.title || '이 작품') + '」을(를) 목록에서 지울까요?\n드라이브 원본 사진은 지워지지 않습니다.')) return;
+  S.artworks = S.artworks.filter(x => x.id !== a.id);
+  Pending.del(a.id);
+  saveLocal();
+  artOrder = artOrder.filter(id => id !== a.id);
+  if (artIndex >= artOrder.length) artIndex = Math.max(0, artOrder.length - 1);
+  renderChrome();
+  if (artOrder.length) renderArtwork(); else closeModal('#mArt');
+  if (S.sheetUrl) schedulePush(300);
+  toast('목록에서 지웠어요');
+}
+
+/* ─────────────────────────── 20. 시작 ─────────────────────────── */
+function initPad() {
+  const pad = $('#pad');
+  const coarse = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+  const want = prefs.pad ? prefs.pad === 'on' : coarse;
+  pad.classList.toggle('collapsed', !want);
+}
+function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+function loop(t) {
+  const dt = Math.min(0.06, (t - (loop.last || t)) / 1000);
+  loop.last = t;
+  let animating = false;
+  if (anim.fade > 0) { anim.fade = Math.max(0, anim.fade - dt * 3.2); animating = true; }
+  if (updateChar(dt)) animating = true;
+  if (animating || dirty) { draw(); dirty = false; }
+  requestAnimationFrame(loop);
+}
+
+function init() {
+  loadLocal();
+  const h = parseHash();
+  if (h) { S.mode = h.mode; if (h.url) S.sheetUrl = h.url; }
+  const qs = new URLSearchParams(location.search);
+  if (qs.get('demo') === '1') loadDemo();
+  const hintEl = $('#hint');
+  if (hintEl) {
+    hintEl.innerHTML = isNarrow()
+      ? '그림을 누르면 크게 보여요 · 위 <b>「큰 사진 앨범」</b>도 있어요'
+      : '그림을 누르면 크게 보여요 · 어른들은 위 <b>「큰 사진 앨범」</b>을 눌러 보세요';
+  }
+  syncScreenButtons();
+  if (!S.view.year) S.view.year = new Date().getFullYear();
+  if (!S.view.room) S.view.room = 1;
+
+  bindEvents();
+  initPad();
+  resize();
+  renderChrome();
+  setSync(S.sheetUrl ? (S.mode === 'view' ? 'on' : 'on') : 'off', S.sheetUrl ? '연결됨' : '이 기기에 저장');
+
+  if (S.mode === 'view') {
+    $('#viewerBadge').hidden = false;
+    setSync('on', '관람 전용');
+  }
+  if (!prefs.hintSeen) {
+    setTimeout(() => { if (prefs.hintSeen) return; hideHint(); }, 9000);
+  } else {
+    $('#hint').classList.add('off');
+  }
+
+  requestAnimationFrame(loop);
+  if (S.sheetUrl) autoConnect();
+  registerSW();
+
+  // 검증·디버깅용 최소한의 읽기 전용 훅 (개인정보 없음)
+  window.__kg = {
+    version: APP_VERSION,
+    state: () => ({
+      mode: S.mode, demo: S.demo, year: S.view.year, room: S.view.room, artist: S.view.artist,
+      character: S.character, count: S.artworks.length, sheet: !!S.sheetUrl,
+      title: S.settings.museumTitle
+    }),
+    works: () => roomWorks(S.view.year, S.view.room, S.view.artist, 'asc')
+      .map(a => ({ id: a.id, title: a.title, date: a.date, artist: a.artist })),
+    frames: () => hits.map(h => ({
+      id: h.id,
+      cx: h.poly.reduce((s, p) => s + p.x, 0) / h.poly.length,
+      cy: h.poly.reduce((s, p) => s + p.y, 0) / h.poly.length
+    })),
+    char: () => ({ x: +char.x.toFixed(2), y: +char.y.toFixed(2), moving: char.moving, path: char.path.length }),
+    charLabel: () => personLabel(S.character),
+    proj: (x, y, z) => proj(x, y, z || 0),
+    floorOf: (y) => floorOf(y),
+    slots: () => SLOTS.length,
+    slotsInfo: () => SLOTS.map(s => ({ key: s.key, plane: s.plane, u: +s.u.toFixed(2), z: s.z, w: +s.w.toFixed(2), h: s.h })),
+    halls: () => hallPlan(roomWorks(S.view.year, S.view.room, S.view.artist, 'asc').length).halls,
+    hallPer: () => hallPlan(roomWorks(S.view.year, S.view.room, S.view.artist, 'asc').length).per,
+    hall: () => S.view.hall,
+    screen: () => S.screen,
+    album: () => ({
+      scope: S.albumScope,
+      count: document.querySelectorAll('#albumGrid .acard').length,
+      heads: Array.prototype.map.call(document.querySelectorAll('#albumGrid .acard .tx b'), n => n.textContent)
+    }),
+    frameBoxes: () => hits.map(h => ({
+      id: h.id, cx: +h.cx.toFixed(1), cy: +h.cy.toFixed(1),
+      w: +(Math.max.apply(null, h.poly.map(p => p.x)) - Math.min.apply(null, h.poly.map(p => p.x))).toFixed(1),
+      h: +(Math.max.apply(null, h.poly.map(p => p.y)) - Math.min.apply(null, h.poly.map(p => p.y))).toFixed(1)
+    })),
+    roomSize: () => ({ W: VIEW.W, D: VIEW.D, H: VIEW.H })
+  };
+
+  // 첫 화면에서 캐릭터가 살짝 걸어 나오는 연출
+  char.x = 4.5; char.y = 6.5;
+  char.path = [{ x: 5.1, y: 7.0 }];
+  setTimeout(() => { dirty = true; }, 30);
+}
+
+window.addEventListener('resize', () => { resize(); });
+document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>
