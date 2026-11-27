@@ -173,7 +173,7 @@
 python3 work/kids-gallery/test/verify.py
 ```
 
-- 결과: `verification/2026-11-27-v21/result.json` (**222개 점검 전부 통과**)
+- 결과: `verification/2026-11-27-v21/result.json` (**225개 점검 전부 통과**)
 - 화면: 같은 폴더의 `01-gallery-main.png` … `25-mobile-floors.png`
 - 확인 항목(1차 + 2차 + 2.1):
   - **층 규칙·층 관리** — 2026년=1층 / 2027년=2층 / 2025년=B1층 / 2024년=B2층,
