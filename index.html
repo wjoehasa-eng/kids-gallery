@@ -77,8 +77,11 @@
   .strips{display:flex;gap:8px;align-items:center;flex-wrap:nowrap;min-width:0}
   .strips .seg{flex:0 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}
   .strips .seg::-webkit-scrollbar{display:none}
-  .seg.floors{margin-left:auto;flex:0 0 auto}
-  .seg.floors button{flex-direction:row;gap:3px;padding:7px 9px}
+  /* 층 칩: 층이 늘어나도 잘리지 않게 가로로 밀어 보고, 지금 층은 자동으로 보이게 합니다 */
+  .seg.floors{margin-left:auto;flex:0 1 auto;min-width:0;max-width:64%;overflow-x:auto;overflow-y:hidden;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .seg.floors::-webkit-scrollbar{display:none}
+  .seg.floors button{flex:0 0 auto;flex-direction:row;gap:3px;padding:7px 9px}
   .seg.floors .fl{font-size:11.5px}
   .seg.floors .yr{font-size:9.5px;opacity:.7}
   .seg{display:inline-flex;padding:3px;gap:2px;border-radius:13px;background:var(--panel);
@@ -94,7 +97,9 @@
   /* 층(엘리베이터) */
   .elevator{position:absolute;left:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:4px;
     padding:5px;border-radius:15px;background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-    box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.7)}
+    box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.7);max-height:calc(100vh - 230px);overflow-y:auto;
+    scrollbar-width:none}
+  .elevator::-webkit-scrollbar{display:none}
   .elevator button{border:0;background:transparent;border-radius:11px;padding:6px 2px;width:54px;color:var(--ink2);
     display:flex;flex-direction:column;align-items:center;gap:1px;transition:background .15s,color .15s}
   .elevator .fl{font-size:13px;font-weight:700;letter-spacing:-.02em}
@@ -192,6 +197,19 @@
   .pick button{flex:1;border:1px solid var(--line);background:#fff;border-radius:11px;padding:9px 6px;font-size:12.5px;
     font-weight:600;color:var(--ink2);transition:all .15s}
   .pick button.on{background:var(--accent-soft);border-color:rgba(192,118,90,.45);color:var(--accent-d)}
+  .pick button small{display:block;font-size:10px;font-weight:600;opacity:.65;margin-top:2px}
+
+  /* 층(연도) 관리 */
+  .yrlist{display:flex;flex-direction:column;gap:6px;max-height:46vh;overflow-y:auto;padding:2px}
+  .yrrow{display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid var(--line);border-radius:12px;
+    background:#fff;font-size:13px}
+  .yrrow.on{background:var(--accent-soft);border-color:rgba(192,118,90,.40)}
+  .yrrow .fl{font-weight:800;min-width:46px;color:var(--accent-d);font-size:14px}
+  .yrrow .yr{color:var(--ink2);font-size:12px;font-weight:600}
+  .yrrow .cnt{margin-left:auto;font-size:11px;color:var(--ink3);font-weight:600;white-space:nowrap}
+  .yrrow .mini{padding:6px 10px;font-size:11.5px;border-radius:9px;box-shadow:none;border:1px solid rgba(84,58,40,.14);background:#fff}
+  .yrrow .mini[disabled]{opacity:.45;cursor:default}
+  .yrrow .mini.danger{color:#B4462E;background:rgba(255,245,241,.92);border-color:rgba(180,70,46,.22)}
 
   .drop{display:block;border:1.5px dashed rgba(180,140,110,.45);border-radius:16px;background:
     radial-gradient(120% 100% at 50% 0%,#FFFDF9,#FBF2E8);padding:0;overflow:hidden;position:relative;cursor:pointer}
@@ -302,6 +320,11 @@
     .actions{gap:6px}
     #syncDot{display:none}
     .elevator{display:none}
+    /* 좁은 화면: 작가 필터와 층 칩을 각각 한 줄로 내려 잘리지 않게 합니다 */
+    .strips2{display:grid;grid-template-columns:1fr;gap:6px}
+    .strips2 .seg.artists{justify-self:start;max-width:100%}
+    .strips2 .seg.floors{justify-self:stretch;max-width:100%;margin-left:0}
+    .seg.floors .fl{font-size:12px} .seg.floors .yr{font-size:10px}
     .seg button{padding:6px 8px;font-size:11.5px}
     .cast button span{display:none} .cast button{padding:5px}
     .ui{padding-left:8px;padding-right:8px;gap:6px}
@@ -549,14 +572,41 @@
   </div>
 </div>
 
+<!-- 층(연도) 관리 — 새 층 열기 · 빈 층 지우기 -->
+<div class="modal" id="mYears" role="dialog" aria-modal="true" aria-labelledby="yrTitle">
+  <div class="sheet">
+    <div class="sheet-head"><h2 id="yrTitle">층(연도) 관리</h2><button class="x" data-close aria-label="닫기">✕</button></div>
+    <div class="sheet-body">
+      <p class="muted">2026년이 기본 <b>1층</b>이에요. 2027년은 2층, 2025년은 <b>B1층</b>처럼 아래로 이어집니다.</p>
+      <div class="yrlist" id="yrList"></div>
+      <div class="divider"></div>
+      <div class="sect">
+        <div class="t">새 층 열기</div>
+        <div class="pick" id="yrQuick">
+          <button type="button" id="yrPrev">－ 이전 연도<small id="yrPrevNum">2025년</small></button>
+          <button type="button" id="yrNext">＋ 다음 연도<small id="yrNextNum">2027년</small></button>
+        </div>
+        <label class="field" style="margin-top:4px"><span>원하는 연도 직접 넣기 (2000 ~ 2100)</span>
+          <div style="display:flex;gap:8px">
+            <input type="number" id="yrInput" min="2000" max="2100" step="1" placeholder="예: 2024" inputmode="numeric" />
+            <button class="btn primary" id="yrAdd" style="flex:0 0 auto">추가</button>
+          </div>
+        </label>
+      </div>
+      <p class="muted small">작품이 걸린 층은 실수로 지우지 않도록 잠겨 있어요. <b>빈 층</b>만 지울 수 있습니다.</p>
+    </div>
+    <div class="sheet-foot"><button class="btn" data-close>닫기</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <noscript><p style="padding:24px">이 미술관은 자바스크립트가 필요합니다.</p></noscript>
 
 <script>
 /* ══════════════════════════════════════════════════════════════════════
-   가족 미술관 (kids-gallery) v2.0.0
-   2.5D 아이소메트릭 전시실(한 방 26칸) · 층(연도)/방(분기)/관 · 작가 필터 · 관람 전용
+   가족 미술관 (kids-gallery) v2.1.0
+   2.5D 아이소메트릭 전시실(한 방 26칸, 4실 테마) · 층(연도)/방(분기)/관 · 작가 필터 · 관람 전용
    큰 사진 앨범(어른용) · 캐릭터 없이 큰 카드로 보는 화면
    개인정보 원칙: 코드·데모·테스트에는 실명/기관명/연락처/실제 시트 주소 없음.
    실제 이름은 연결된 비공개 시트의 「설정」 탭에서 불러옵니다.
@@ -565,7 +615,7 @@
 'use strict';
 
 /* ─────────────────────────── 0. 상수 ─────────────────────────── */
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 const LS_KEY = 'kids-gallery.v1';
 const LS_PREFS = 'kids-gallery.prefs';
 const THUMB_MAX_SIDE = 520;
@@ -589,10 +639,141 @@ const ROOMS = [
 ];
 /* 전시실: 널찍한 한 방(12m × 10m)에 액자 26칸 (벽 A·B 두 줄 18칸 + 가벽 8칸) */
 const VIEW = { W: 12, D: 10, H: 3.55, A: 32, B: 21, ZH: 30 };
-const PARTITIONS = [
-  { id: 'P1', axis: 'x', at: 5.6, from: 1.0, to: 6.4, h: 2.2, t: 0.18 },
-  { id: 'P2', axis: 'y', at: 7.7, from: 0.9, to: 5.7, h: 2.2, t: 0.18 }
+
+/* ── 층(연도) 규칙 ──────────────────────────────────────────────
+   기준 연도 2026년을 언제나 1층으로 고정합니다.
+   2027년 = 2층, 2028년 = 3층 … / 2025년 = B1층, 2024년 = B2층 …
+   그래서 과거 연도를 열어도 기존 1층이 밀리지 않습니다. */
+const BASE_YEAR = 2026;
+function floorNo(year) {
+  const y = parseInt(year, 10);
+  return (isNaN(y) ? BASE_YEAR : y) - BASE_YEAR + 1;
+}
+function floorLabel(year) {
+  const n = floorNo(year);
+  return n >= 1 ? (n + '층') : ('B' + (1 - n) + '층');
+}
+
+/* ── 전시실 4개의 테마 ────────────────────────────────────────
+   계절마다 벽·바닥 색, 가벽(파티션) 배치, 소품을 다르게 꾸밉니다.
+   가벽 모양은 방마다 달라도 벽 18칸 + 가벽 8칸 = 한 방 26칸은 그대로입니다. */
+const ROOM_THEMES = [
+  {
+    id: 1, name: '봄 햇살관', tone: '크림 · 세이지그린', decor: 'sun',
+    backdrop: ['#FFF9F2', '#F8EDE0', '#EEDCC9'],
+    wall: { A: ['#FEF8F0', '#F7E7D5'], B: ['#FBF2E7', '#F2DFCB'] },
+    skirt: { A: '#EED7C6', B: '#E8CFBC' },
+    band: { A: '#C2CFB0', B: '#B7C5A5' },
+    floor: { c: ['#F2DCBA', '#EBD2AA', '#E3C795'], line: 'rgba(126,88,52,.13)', cross: 'rgba(126,88,52,.06)', pattern: 'plank', step: 0.5 },
+    rug: { x0: 2.1, y0: 5.5, x1: 6.6, y1: 8.4, a: '#DBE4CB', b: '#EBF0DE', edge: 'rgba(140,162,110,.38)' },
+    part: { face: '#FCF3E9', top: '#EAD3B6', end: '#E5CCBA', skirt: '#F0DCCC', rim: '#BFCBAA' },
+    bench: { wood: '#D7A87A', woodD: '#B98B60', woodL: '#C9996D', pad: '#F0E3C8', padD: '#DCCBAA', padL: '#E7D6B8' },
+    leaf: ['#8FAF8C', '#7C9C79'], leafText: '봄',
+    partitions: [
+      { id: 'P1', axis: 'x', at: 3.9, from: 1.4, to: 7.0, h: 2.2, t: 0.18, n: 4 },
+      { id: 'P2', axis: 'x', at: 6.2, from: 5.0, to: 10.6, h: 2.2, t: 0.18, n: 4 }
+    ],
+    props: [
+      { type: 'bench', x0: 9.0, y0: 7.2, x1: 10.6, y1: 8.0 },
+      { type: 'plant', x: 1.05, y: 8.9, s: 1.0, pot: ['#C98A66', '#B3704F', '#BC7957'] }
+    ]
+  },
+  {
+    id: 2, name: '푸른 정원관', tone: '미스트블루 · 오크', decor: 'garden',
+    backdrop: ['#F6FBFC', '#EAF3F5', '#DCEBEF'],
+    wall: { A: ['#F5FAFB', '#E3EEF2'], B: ['#EFF6F9', '#DBE9EE'] },
+    skirt: { A: '#D6E3E7', B: '#CDDCE2' },
+    band: { A: '#A6C2CB', B: '#9CB8C2' },
+    floor: { c: ['#E9D5B6', '#E2CBA8', '#DAC098'], line: 'rgba(118,90,58,.16)', cross: 'rgba(118,90,58,.07)', pattern: 'oak', step: 0.62 },
+    rug: { x0: 4.9, y0: 1.9, x1: 9.3, y1: 4.4, a: '#CFE4DE', b: '#E1F0EB', edge: 'rgba(110,160,152,.35)' },
+    part: { face: '#F4F9FA', top: '#E2C9A6', end: '#D6E3E7', skirt: '#E5EFF1', rim: '#9FBCC4' },
+    bench: { wood: '#D9BE98', woodD: '#BC9E78', woodL: '#C9AF89', pad: '#E8F0E7', padD: '#D2E0D6', padL: '#DEEAE0' },
+    leaf: ['#6D9B70', '#7FA97C'], leafText: '여름',
+    partitions: [
+      { id: 'P1', axis: 'x', at: 4.6, from: 1.4, to: 6.4, h: 2.2, t: 0.18, n: 4 },
+      { id: 'P2', axis: 'y', at: 7.6, from: 1.6, to: 6.6, h: 2.2, t: 0.18, n: 4 }
+    ],
+    props: [
+      { type: 'planter', x0: 4.6, y0: 7.3, x1: 6.6, y1: 8.05 },
+      { type: 'plinth', x: 2.1, y: 2.2, r: 0.5, h: 0.95 },
+      { type: 'plant', x: 10.9, y: 2.3, s: 1.05, pot: ['#8FA6A1', '#76908C', '#7F9A95'] }
+    ]
+  },
+  {
+    id: 3, name: '노을 아틀리에', tone: '테라코타 · 샌드', decor: 'sunset',
+    backdrop: ['#FFF7ED', '#FBEDDD', '#F2DEC7'],
+    wall: { A: ['#FDF1E3', '#F6DFC8'], B: ['#FBECDD', '#F3D8BE'] },
+    skirt: { A: '#EBCDB4', B: '#E5C3A7' },
+    band: { A: '#D08C63', B: '#C98359' },
+    floor: { c: ['#ECCDA4', '#E5C196', '#DEB98C'], line: 'rgba(150,96,64,.16)', cross: 'rgba(150,96,64,.08)', pattern: 'tile', step: 1.4 },
+    rug: { x0: 1.7, y0: 6.7, x1: 5.2, y1: 9.1, a: '#DCB29A', b: '#EBCBB8', edge: 'rgba(176,108,78,.34)' },
+    part: { face: '#FBEEDF', top: '#D9A97C', end: '#E4C3A6', skirt: '#EFD8C3', rim: '#B7784E' },
+    bench: { wood: '#C99570', woodD: '#A9784F', woodL: '#B98760', pad: '#EAD3BF', padD: '#D3B79E', padL: '#DFC5AE' },
+    leaf: ['#7FA97C', '#6D9B70'], leafText: '가을',
+    partitions: [
+      { id: 'P1', axis: 'x', at: 3.4, from: 2.6, to: 8.6, h: 2.2, t: 0.18, n: 4 },
+      { id: 'P2', axis: 'y', at: 2.6, from: 3.4, to: 6.6, h: 2.2, t: 0.18, n: 2 },
+      { id: 'P3', axis: 'y', at: 8.6, from: 3.4, to: 6.6, h: 2.2, t: 0.18, n: 2 }
+    ],
+    props: [
+      { type: 'easel', x: 2.6, y: 9.0, r: 0.45 },
+      { type: 'lamp', x: 10.6, y: 4.6, r: 0.28 },
+      { type: 'stool', x: 9.35, y: 7.5, r: 0.3 },
+      { type: 'stool', x: 10.2, y: 8.15, r: 0.28 }
+    ]
+  },
+  {
+    id: 4, name: '겨울 별빛관', tone: '미드나잇 네이비 · 골드', decor: 'stars',
+    backdrop: ['#2C3350', '#232942', '#191E30'],
+    wall: { A: ['#34415F', '#2A3550'], B: ['#2F3B57', '#26304A'] },
+    skirt: { A: '#3B4867', B: '#343F5D' },
+    band: { A: '#C9A45C', B: '#C09A52' },
+    floor: { c: ['#514A63', '#494258', '#413A4F'], line: 'rgba(210,190,150,.10)', cross: 'rgba(210,190,150,.05)', pattern: 'star', step: 1.8 },
+    rug: { x0: 4.3, y0: 6.7, x1: 7.7, y1: 8.0, a: '#3C4366', b: '#4A5178', edge: 'rgba(201,164,92,.35)' },
+    part: { face: '#3A4460', top: '#2E3850', end: '#333D58', skirt: '#2C3448', rim: '#C9A45C' },
+    bench: { wood: '#6E5A46', woodD: '#584736', woodL: '#7E6A54', pad: '#8E7A5E', padD: '#75624A', padL: '#9C8869' },
+    leaf: ['#5E7D6E', '#547264'], leafText: '겨울',
+    partitions: [
+      { id: 'P1', axis: 'y', at: 3.6, from: 1.5, to: 5.3, h: 2.2, t: 0.18, n: 2 },
+      { id: 'P2', axis: 'y', at: 8.4, from: 1.5, to: 5.3, h: 2.2, t: 0.18, n: 2 },
+      { id: 'P3', axis: 'x', at: 6.5, from: 3.6, to: 8.4, h: 2.2, t: 0.18, n: 4 }
+    ],
+    props: [
+      { type: 'bench', x0: 4.9, y0: 8.2, x1: 7.1, y1: 9.0 },
+      { type: 'globe', x: 1.2, y: 2.3, r: 0.3 },
+      { type: 'globe', x: 10.8, y: 2.3, r: 0.3 }
+    ]
+  }
 ];
+const THEMES_BY_ID = {};
+ROOM_THEMES.forEach(t => { THEMES_BY_ID[t.id] = t; });
+
+/* 방마다 달라지는 값들 — useRoom() 이 방을 바꿀 때 채웁니다. */
+let THEME = ROOM_THEMES[0];
+let PARTITIONS = ROOM_THEMES[0].partitions;
+let SLOTS = [];
+let SLOT_ORDER = [];
+
+function roomDef(room) {
+  const t = THEMES_BY_ID[room] || ROOM_THEMES[0];
+  if (!t._slots) {
+    // 둥근 소품도 충돌·깊이 계산에 쓸 사각 경계를 갖게 합니다.
+    t.props.forEach(p => {
+      if (p.x0 == null) {
+        const r = p.r || 0.34;
+        p.x0 = p.x - r; p.x1 = p.x + r; p.y0 = p.y - r; p.y1 = p.y + r;
+      }
+    });
+    t._slots = buildSlots(t.partitions);
+    t._order = buildSlotOrder(t._slots);
+  }
+  return t;
+}
+function useRoom(room) {
+  const t = roomDef(room);
+  THEME = t; PARTITIONS = t.partitions; SLOTS = t._slots; SLOT_ORDER = t._order;
+  return t;
+}
 const HIT_PAD = 7;   // 액자 클릭 영역을 화면에서 7px 더 넓혀줍니다 (어른 손가락까지 고려)
 const PEOPLE = {
   dad:  { h: 1.78, shirt: '#6F8FB4', shirt2: '#5E7CA1', pants: '#3E4756', hair: '#2F2A28', skin: '#F2CFB3', style: 'short' },
@@ -679,7 +860,7 @@ const S = {
   settings: Object.assign({}, DEFAULT_SETTINGS),
   artworks: [],
   character: 'dad',
-  view: { year: new Date().getFullYear(), room: 1, artist: 'all', hall: 1 },
+  view: { year: BASE_YEAR, room: 1, artist: 'all', hall: 1 },
   sheetUrl: '',
   mode: 'edit',
   demo: false,
@@ -700,8 +881,8 @@ function loadLocal() {
         if (Array.isArray(o.artworks)) S.artworks = o.artworks.filter(a => a && a.id && a.date);
         if (o.character && PEOPLE[o.character]) S.character = o.character;
         if (o.sheetUrl) S.sheetUrl = o.sheetUrl;
-        if (Array.isArray(o.extraYears)) S.extraYears = o.extraYears;
-        if (o.view && o.view.year) S.view = Object.assign(S.view, o.view);
+        if (Array.isArray(o.extraYears)) S.extraYears = o.extraYears.map(y => parseInt(y, 10)).filter(y => !isNaN(y));
+        if (o.view && o.view.year) { S.view = Object.assign(S.view, o.view); S.view.year = parseInt(S.view.year, 10) || BASE_YEAR; }
       }
     }
   } catch (e) { /* 깨진 저장값은 무시하고 새로 시작 */ }
@@ -723,7 +904,7 @@ function saveLocal() {
   pruneThumbs(real);
   const payload = {
     v: 1, savedAt: nowISO(), settings: S.settings, artworks: real,
-    character: S.character, sheetUrl: S.sheetUrl, extraYears: S.extraYears, view: S.view
+    character: S.character, sheetUrl: S.sheetUrl, extraYears: S.demo ? [] : S.extraYears, view: S.view
   };
   try {
     localStorage.setItem(LS_KEY, JSON.stringify(payload));
@@ -941,9 +1122,10 @@ function drawImageQuad(img, q) {
 }
 
 /* 슬롯 배치 — 방 하나에 26칸
+   벽 A·B 두 줄 18칸 + 가벽 8칸. 가벽 위치·방향은 방마다 달라도 칸 수는 같습니다.
    배열 순서가 곧 작품을 거는 순서입니다 (아래 줄 → 가벽 → 위 줄).
    벽 B 는 화면 왼쪽, 벽 A 는 오른쪽이라 사람이 읽는 순서(왼→오)로 놓습니다. */
-function buildSlots() {
+function buildSlots(parts) {
   const out = [];
   function row(plane, u0, u1, n, z, h, gap, rev) {
     const span = u1 - u0;
@@ -959,19 +1141,17 @@ function buildSlots() {
   const A0 = 0.55, A1 = VIEW.W - 0.55, B0 = 0.55, B1 = VIEW.D - 0.55;
   out.push.apply(out, row('A', A0, A1, 5, 1.05, 1.50, 0.20, false));   // 벽 A 아래 줄
   out.push.apply(out, row('B', B0, B1, 4, 1.05, 1.50, 0.22, true));    // 벽 B 아래 줄
-  out.push.apply(out, row('P1', 1.15, 6.25, 4, 1.45, 1.10, 0.20, false));
-  out.push.apply(out, row('P2', 1.05, 5.55, 4, 1.45, 1.10, 0.20, false));
+  (parts || []).forEach(p => {
+    out.push.apply(out, row(p.id, p.from + 0.15, p.to - 0.15, p.n || 4, p.slotZ || 1.45, p.slotH || 1.10, 0.18, false));
+  });
   out.push.apply(out, row('A', A0, A1, 5, 2.60, 1.50, 0.20, false));   // 벽 A 위 줄
   out.push.apply(out, row('B', B0, B1, 4, 2.60, 1.50, 0.22, true));    // 벽 B 위 줄
   return out;
 }
-const SLOTS = buildSlots();
-const SLOT_BY_KEY = {};
-SLOTS.forEach(s => { SLOT_BY_KEY[s.key] = s; });
 /* 작품이 적을 때도 벽·가벽에 고르게 펼쳐지도록, 무리(벽 한 줄)·가벽을 번갈아 가며 채웁니다. */
-const SLOT_ORDER = (function () {
+function buildSlotOrder(slots) {
   const groups = [];
-  SLOTS.forEach(s => {
+  slots.forEach(s => {
     const gk = s.plane + '@' + s.z;
     let g = groups.filter(q => q.k === gk)[0];
     if (!g) { g = { k: gk, keys: [] }; groups.push(g); }
@@ -984,12 +1164,12 @@ const SLOT_ORDER = (function () {
     groups.forEach(g => { if (g.keys[i]) { out.push(g.keys[i]); more = true; } });
   }
   return out;
-})();
+}
 
 /* 한 방의 작품이 26칸을 넘으면 같은 방을 1관·2관으로 나눕니다.
    칸을 넘길 때까지 채우지 않고, 관마다 비슷한 수로 고르게 나눕니다(예: 27점 → 14 + 13). */
-function hallPlan(n) {
-  const cap = SLOTS.length;
+function hallPlan(n, cap) {
+  cap = cap || (SLOTS.length || 26);
   const halls = Math.max(1, Math.ceil(n / cap));
   const per = Math.ceil(n / halls) || cap;
   return { halls: halls, per: Math.min(cap, per) };
@@ -1005,13 +1185,20 @@ function personLabel(key) {
 }
 function floorYears() {
   const set = new Set();
+  set.add(BASE_YEAR);                 // 2026년(1층)은 작품이 0점이어도 언제나 남아 있습니다
   S.artworks.forEach(a => set.add(yearOf(a.date)));
-  set.add(S.view.year);
-  S.extraYears.forEach(y => set.add(y));
-  if (!set.size) set.add(new Date().getFullYear());
+  (S.extraYears || []).forEach(y => { const n = parseInt(y, 10); if (!isNaN(n) && n >= 1900 && n <= 2200) set.add(n); });
+  const vy = parseInt(S.view.year, 10);
+  if (!isNaN(vy)) set.add(vy);
   return Array.from(set).sort((a, b) => a - b);
 }
-function floorOf(year) { return floorYears().indexOf(year) + 1; }
+function floorOf(year) { return floorNo(year); }
+/* 작품 없이 둘러보기만 해도 그 층이 남아 있게 S.extraYears 에 기록합니다. */
+function ensureYear(year) {
+  const y = parseInt(year, 10);
+  if (isNaN(y) || y < 1900 || y > 2200) return;
+  if (S.extraYears.indexOf(y) < 0 && floorYears().indexOf(y) < 0) S.extraYears.push(y);
+}
 function artistWorks(artist) {
   return S.artworks.filter(a => artist === 'all' || a.artist === artist);
 }
@@ -1100,56 +1287,144 @@ function imgFor(a) {
 }
 
 function drawBackdrop() {
+  const T = THEME;
   const g = ctx.createRadialGradient(CW * 0.5, CH * 0.36, Math.min(CW, CH) * 0.08, CW * 0.5, CH * 0.5, Math.max(CW, CH) * 0.78);
-  g.addColorStop(0, '#FEF9F2');
-  g.addColorStop(0.5, '#F8EDE0');
-  g.addColorStop(1, '#EEDCC9');
+  g.addColorStop(0, T.backdrop[0]);
+  g.addColorStop(0.5, T.backdrop[1]);
+  g.addColorStop(1, T.backdrop[2]);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, CW, CH);
 }
 
+function drawRug(R) {
+  const z = 0.005;
+  pathPoly([proj(R.x0, R.y0, z), proj(R.x1, R.y0, z), proj(R.x1, R.y1, z), proj(R.x0, R.y1, z)]);
+  ctx.fillStyle = R.a; ctx.fill();
+  const m = 0.16;
+  pathPoly([proj(R.x0 + m, R.y0 + m, z + .001), proj(R.x1 - m, R.y0 + m, z + .001), proj(R.x1 - m, R.y1 - m, z + .001), proj(R.x0 + m, R.y1 - m, z + .001)]);
+  ctx.fillStyle = R.b; ctx.fill();
+  ctx.strokeStyle = R.edge;
+  ctx.lineWidth = Math.max(0.8, 1.4 * cam.scale);
+  const k = m + 0.14;
+  pathPoly([proj(R.x0 + k, R.y0 + k, z + .002), proj(R.x1 - k, R.y0 + k, z + .002), proj(R.x1 - k, R.y1 - k, z + .002), proj(R.x0 + k, R.y1 - k, z + .002)]);
+  ctx.stroke();
+}
+/* 바닥·벽의 은은한 별빛 (겨울 별빛관) */
+function starDot(x, y, r, a) {
+  if (r < 0.6) return;
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.fillStyle = '#F7E6BC';
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  if (r > cam.scale * 1.6) {
+    ctx.strokeStyle = 'rgba(247,230,188,.55)';
+    ctx.lineWidth = Math.max(0.6, r * 0.4);
+    ctx.beginPath();
+    ctx.moveTo(x - r * 2.8, y); ctx.lineTo(x + r * 2.8, y);
+    ctx.moveTo(x, y - r * 2.8); ctx.lineTo(x, y + r * 2.8);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
 function drawFloor() {
-  const W = VIEW.W, D = VIEW.D;
+  const T = THEME, W = VIEW.W, D = VIEW.D;
   const quad = [proj(0, 0, 0), proj(W, 0, 0), proj(W, D, 0), proj(0, D, 0)];
   pathPoly(quad);
   const g = ctx.createLinearGradient(0, proj(0, 0, 0).y, 0, proj(W, D, 0).y);
-  g.addColorStop(0, '#EDD1A8');
-  g.addColorStop(0.55, '#E7C79A');
-  g.addColorStop(1, '#DFB98A');
+  g.addColorStop(0, T.floor.c[0]);
+  g.addColorStop(0.55, T.floor.c[1]);
+  g.addColorStop(1, T.floor.c[2]);
   ctx.fillStyle = g;
   ctx.fill();
 
   ctx.save();
   pathPoly(quad); ctx.clip();
-  // 마루 널
-  ctx.strokeStyle = 'rgba(126,88,52,.13)';
-  ctx.lineWidth = Math.max(0.7, 1.1 * cam.scale);
-  for (let y = 0.45; y < D; y += 0.45) {
-    const p1 = proj(0, y, 0), p2 = proj(W, y, 0);
-    ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+  const lw = Math.max(0.7, 1.1 * cam.scale);
+  const step = T.floor.step || 0.45;
+
+  if (T.floor.pattern === 'tile' || T.floor.pattern === 'star') {
+    // 큰 타일 바닥 (노을 아틀리에 · 겨울 별빛관)
+    ctx.strokeStyle = T.floor.line; ctx.lineWidth = lw;
+    for (let y = step; y < D; y += step) {
+      const p1 = proj(0, y, 0), p2 = proj(W, y, 0);
+      ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+    }
+    for (let x = step; x < W; x += step) {
+      const p1 = proj(x, 0, 0), p2 = proj(x, D, 0);
+      ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+    }
+    ctx.strokeStyle = T.floor.cross;
+    for (let y = step / 2; y < D; y += step) {
+      const p1 = proj(0, y, 0), p2 = proj(W, y, 0);
+      ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+    }
+  } else {
+    // 마루 널 (봄 햇살관 · 푸른 정원관)
+    ctx.strokeStyle = T.floor.line; ctx.lineWidth = lw;
+    for (let y = step; y < D; y += step) {
+      const p1 = proj(0, y, 0), p2 = proj(W, y, 0);
+      ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+    }
+    ctx.strokeStyle = T.floor.cross;
+    for (let x = 1; x < W; x++) {
+      const p1 = proj(x, 0, 0), p2 = proj(x, D, 0);
+      ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+    }
+    if (T.floor.pattern === 'oak') {
+      // 오크 널 이음매 — 줄마다 한 칸씩 어길려
+      ctx.strokeStyle = T.floor.line; ctx.lineWidth = lw;
+      let r = 0;
+      for (let y = 0; y < D; y += step, r++) {
+        for (let x = (r % 2 ? 1.5 : 0.8); x < W; x += 2.3) {
+          const p1 = proj(x, y, 0), p2 = proj(x, Math.min(D, y + step), 0);
+          ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+        }
+      }
+    }
   }
-  ctx.strokeStyle = 'rgba(126,88,52,.07)';
-  for (let x = 1; x < W; x++) {
-    const p1 = proj(x, 0, 0), p2 = proj(x, D, 0);
-    ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
-  }
+
   // 벽 밑 그늘
-  ctx.fillStyle = 'rgba(104,70,44,.09)';
+  ctx.fillStyle = T.dark ? 'rgba(12,10,22,.26)' : 'rgba(104,70,44,.09)';
   pathPoly([proj(0, 0, 0), proj(W, 0, 0), proj(W, 0.55, 0), proj(0, 0.55, 0)]); ctx.fill();
   pathPoly([proj(0, 0, 0), proj(0, D, 0), proj(0.55, D, 0), proj(0.55, 0, 0)]); ctx.fill();
+
+  // 테마별 바닥 연출
+  if (T.decor === 'sun') {
+    // 창가에서 들어오는 햇살
+    ctx.save();
+    ctx.globalAlpha = 0.30;
+    [[2.9, 5.8, 1.5], [7.2, 4.6, 1.2]].forEach(b => {
+      pathPoly([proj(b[0], 0.2, 0.01), proj(b[0] + b[2], 0.2, 0.01), proj(b[0] + b[2] + 1.8, b[1], 0.01), proj(b[0] + 1.8, b[1], 0.01)]);
+      ctx.fillStyle = '#FFE9AE'; ctx.fill();
+    });
+    ctx.restore();
+  } else if (T.decor === 'garden') {
+    // 창가의 시원한 빛
+    ctx.save();
+    ctx.globalAlpha = 0.22;
+    pathPoly([proj(0.3, 6.4, 0.01), proj(0.3, 9.6, 0.01), proj(4.6, 9.6, 0.01), proj(2.4, 6.4, 0.01)]);
+    ctx.fillStyle = '#CFEAF0'; ctx.fill();
+    ctx.restore();
+  } else if (T.decor === 'sunset') {
+    // 노을빛이 번진 바닥
+    const c = proj(10.2, 7.6, 0);
+    const gg = ctx.createRadialGradient(c.x, c.y, 10, c.x, c.y, 320);
+    gg.addColorStop(0, 'rgba(236,150,92,.22)');
+    gg.addColorStop(1, 'rgba(236,150,92,0)');
+    ctx.save(); ctx.fillStyle = gg; ctx.fillRect(0, 0, CW, CH); ctx.restore();
+  } else if (T.decor === 'stars') {
+    // 바닥에 박힌 별빛
+    let seed = 17;
+    for (let i = 0; i < 34; i++) {
+      seed = (seed * 9301 + 49297) % 233280; const u = seed / 233280;
+      seed = (seed * 9301 + 49297) % 233280; const v = seed / 233280;
+      const p = proj(u * W, v * D, 0.012);
+      starDot(p.x, p.y, Math.max(0.7, (i % 6 === 0 ? 2.0 : 1.1) * cam.scale), i % 6 === 0 ? 0.7 : 0.38);
+    }
+  }
   ctx.restore();
 
-  // 러그
-  const r0 = 2.6, r1 = 6.9, q0 = 6.5, q1 = 9.2;
-  pathPoly([proj(r0, q0, 0.005), proj(r1, q0, 0.005), proj(r1, q1, 0.005), proj(r0, q1, 0.005)]);
-  ctx.fillStyle = '#E7C3B8'; ctx.fill();
-  const in0 = r0 + 0.16, in1 = r1 - 0.16, ip0 = q0 + 0.16, ip1 = q1 - 0.16;
-  pathPoly([proj(in0, ip0, 0.006), proj(in1, ip0, 0.006), proj(in1, ip1, 0.006), proj(in0, ip1, 0.006)]);
-  ctx.fillStyle = '#F0D8CE'; ctx.fill();
-  pathPoly([proj(in0 + 0.14, ip0 + 0.14, 0.007), proj(in1 - 0.14, ip0 + 0.14, 0.007), proj(in1 - 0.14, ip1 - 0.14, 0.007), proj(in0 + 0.14, ip1 - 0.14, 0.007)]);
-  ctx.strokeStyle = 'rgba(196,138,120,.35)';
-  ctx.lineWidth = Math.max(0.8, 1.4 * cam.scale);
-  ctx.stroke();
+  drawRug(T.rug);
 }
 
 function wallQuadA() {
@@ -1159,26 +1434,36 @@ function wallQuadB() {
   return [proj(0, 0, 0), proj(0, VIEW.D, 0), proj(0, VIEW.D, VIEW.H), proj(0, 0, VIEW.H)];
 }
 function drawWallBase(which) {
-  const W = VIEW.W, D = VIEW.D, H = VIEW.H;
+  const W = VIEW.W, D = VIEW.D, H = VIEW.H, T = THEME;
   const q = which === 'A' ? wallQuadA() : wallQuadB();
   pathPoly(q);
   const ys = q.map(p => p.y);
   const g = ctx.createLinearGradient(0, Math.min.apply(null, ys), 0, Math.max.apply(null, ys));
-  g.addColorStop(0, which === 'A' ? '#FDF6EF' : '#F8EEE6');
-  g.addColorStop(1, which === 'A' ? '#F3E3D7' : '#EDD8CB');
+  g.addColorStop(0, T.wall[which][0]);
+  g.addColorStop(1, T.wall[which][1]);
   ctx.fillStyle = g; ctx.fill();
 
   // 걸레받이
   const bb = (which === 'A')
     ? [proj(0, 0, 0), proj(W, 0, 0), proj(W, 0, 0.17), proj(0, 0, 0.17)]
     : [proj(0, 0, 0), proj(0, D, 0), proj(0, D, 0.17), proj(0, 0, 0.17)];
-  pathPoly(bb); ctx.fillStyle = which === 'A' ? '#EBD2C4' : '#E5C8B9'; ctx.fill();
+  pathPoly(bb); ctx.fillStyle = T.skirt[which]; ctx.fill();
 
-  // 천장 쪽 띠 (따뜻한 포인트)
+  // 천장 쪽 띠 (방마다 다른 포인트 색)
   const tr = (which === 'A')
     ? [proj(0, 0, H - 0.13), proj(W, 0, H - 0.13), proj(W, 0, H), proj(0, 0, H)]
     : [proj(0, 0, H - 0.13), proj(0, D, H - 0.13), proj(0, D, H), proj(0, 0, H)];
-  pathPoly(tr); ctx.fillStyle = which === 'A' ? '#E9C1B8' : '#E3B6AC'; ctx.fill();
+  pathPoly(tr); ctx.fillStyle = T.band[which]; ctx.fill();
+}
+
+/* 벽 장식 — 겨울 별빛관은 벽에도 별이 반짝입니다 */
+function drawWallDecor() {
+  const T = THEME;
+  if (T.decor !== 'stars') return;
+  const A = [[1.4, 2.30, .55], [2.9, 1.35, .38], [4.5, 2.62, .62], [6.3, 1.45, .34], [8.1, 2.35, .55], [9.9, 1.30, .40], [11.2, 2.70, .32]];
+  const B = [[1.25, 1.25, .40], [2.6, 2.60, .55], [4.3, 1.40, .34], [6.1, 2.45, .50], [7.9, 1.55, .32], [9.5, 2.72, .42]];
+  A.forEach(p => { const q = proj(p[0], 0.002, p[1]); starDot(q.x, q.y, Math.max(0.8, p[2] * 5 * cam.scale), .55); });
+  B.forEach(p => { const q = proj(0.002, p[0], p[1]); starDot(q.x, q.y, Math.max(0.8, p[2] * 5 * cam.scale), .50); });
 }
 
 function drawFrame(slot, art) {
@@ -1243,7 +1528,7 @@ function drawFrame(slot, art) {
 }
 
 function drawPartition(p) {
-  const t = p.t, H = p.h;
+  const t = p.t, H = p.h, C = THEME.part;
   const ua = p.from, ub = p.to, at = p.at;
   const face = (p.axis === 'x')
     ? [proj(ua, at + t, 0), proj(ub, at + t, 0), proj(ub, at + t, H), proj(ua, at + t, H)]
@@ -1256,29 +1541,29 @@ function drawPartition(p) {
     : [proj(at, ub, 0), proj(at + t, ub, 0), proj(at + t, ub, H), proj(at, ub, H)];
 
   ctx.save();
-  ctx.shadowColor = 'rgba(96,66,44,.16)';
+  ctx.shadowColor = THEME.dark ? 'rgba(0,0,0,.42)' : 'rgba(96,66,44,.16)';
   ctx.shadowBlur = Math.max(4, 10 * cam.scale);
   ctx.shadowOffsetY = Math.max(1.5, 3 * cam.scale);
-  pathPoly(end); ctx.fillStyle = '#E7CEC0'; ctx.fill();
+  pathPoly(end); ctx.fillStyle = C.end; ctx.fill();
   ctx.restore();
 
-  pathPoly(top); ctx.fillStyle = '#E9CDAA'; ctx.fill();
-  pathPoly(face); ctx.fillStyle = '#FBF1E8'; ctx.fill();
+  pathPoly(top); ctx.fillStyle = C.top; ctx.fill();
+  pathPoly(face); ctx.fillStyle = C.face; ctx.fill();
 
   // 걸레받이
   const bb = (p.axis === 'x')
     ? [proj(ua, at + t, 0), proj(ub, at + t, 0), proj(ub, at + t, 0.16), proj(ua, at + t, 0.16)]
     : [proj(at + t, ua, 0), proj(at + t, ub, 0), proj(at + t, ub, 0.16), proj(at + t, ua, 0.16)];
-  pathPoly(bb); ctx.fillStyle = '#EFD9CC'; ctx.fill();
+  pathPoly(bb); ctx.fillStyle = C.skirt; ctx.fill();
 
-  // 상단 나무 테두리
+  // 상단 테두리 (방마다 다른 색)
   const rim = (p.axis === 'x')
     ? [proj(ua, at + t, H - 0.07), proj(ub, at + t, H - 0.07), proj(ub, at + t, H), proj(ua, at + t, H)]
     : [proj(at + t, ua, H - 0.07), proj(at + t, ub, H - 0.07), proj(at + t, ub, H), proj(at + t, ua, H)];
-  pathPoly(rim); ctx.fillStyle = '#D8AC80'; ctx.fill();
+  pathPoly(rim); ctx.fillStyle = C.rim; ctx.fill();
 
   pathPoly(face);
-  ctx.strokeStyle = 'rgba(160,128,104,.18)';
+  ctx.strokeStyle = THEME.dark ? 'rgba(0,0,0,.22)' : 'rgba(160,128,104,.18)';
   ctx.lineWidth = Math.max(0.6, 1 * cam.scale);
   ctx.stroke();
 }
@@ -1292,25 +1577,38 @@ function isoBox(x0, y0, x1, y1, z0, z1, top, front, side) {
   ctx.fillStyle = top; ctx.fill();
 }
 
-function drawBench() {
-  const x0 = 8.75, x1 = 10.45, y0 = 7.05, y1 = 7.85;
+/* ── 바닥 소품 (방마다 다른 것들) ── */
+function drawProp(p) {
+  if (p.type === 'bench') drawBenchProp(p);
+  else if (p.type === 'plant') drawPlantProp(p);
+  else if (p.type === 'planter') drawPlanterProp(p);
+  else if (p.type === 'plinth') drawPlinthProp(p);
+  else if (p.type === 'easel') drawEaselProp(p);
+  else if (p.type === 'lamp') drawLampProp(p);
+  else if (p.type === 'stool') drawStoolProp(p);
+  else if (p.type === 'globe') drawGlobeProp(p);
+}
+
+function drawBenchProp(p) {
+  const B = THEME.bench;
+  const x0 = p.x0, x1 = p.x1, y0 = p.y0, y1 = p.y1;
   ctx.save();
-  ctx.shadowColor = 'rgba(96,66,44,.18)';
+  ctx.shadowColor = THEME.dark ? 'rgba(0,0,0,.45)' : 'rgba(96,66,44,.18)';
   ctx.shadowBlur = Math.max(6, 14 * cam.scale);
   ctx.shadowOffsetY = Math.max(2, 4 * cam.scale);
-  isoBox(x0, y0, x1, y1, 0.16, 0.42, '#D7A87A', '#B98B60', '#C9996D');
+  isoBox(x0, y0, x1, y1, 0.16, 0.42, B.wood, B.woodD, B.woodL);
   ctx.restore();
-  isoBox(x0 + 0.06, y0 + 0.06, x1 - 0.06, y1 - 0.06, 0.42, 0.5, '#F0DCC6', '#DCC3A8', '#E6CEB4');
-  // 다리
-  [[x0 + 0.12, y0 + 0.12], [x1 - 0.2, y0 + 0.12], [x0 + 0.12, y1 - 0.2], [x1 - 0.2, y1 - 0.2]].forEach(p => {
-    isoBox(p[0], p[1], p[0] + 0.1, p[1] + 0.1, 0, 0.17, '#B98B60', '#9C7048', '#A67B52');
+  isoBox(x0 + 0.06, y0 + 0.06, x1 - 0.06, y1 - 0.06, 0.42, 0.5, B.pad, B.padD, B.padL);
+  [[x0 + 0.12, y0 + 0.12], [x1 - 0.2, y0 + 0.12], [x0 + 0.12, y1 - 0.2], [x1 - 0.2, y1 - 0.2]].forEach(q => {
+    isoBox(q[0], q[1], q[0] + 0.1, q[1] + 0.1, 0, 0.17, B.woodD, '#8E6238', '#9C7048');
   });
 }
 
-function drawPlant() {
-  const cx = 1.05, cy = 8.9, s = cam.scale;
+function drawPlantProp(p) {
+  const cx = p.x, cy = p.y, s = p.s || 1;
+  const pot = p.pot || ['#C98A66', '#B3704F', '#BC7957'];
   // 화분
-  isoBox(cx - 0.3, cy - 0.3, cx + 0.3, cy + 0.3, 0, 0.52, '#C98A66', '#B3704F', '#BC7957');
+  isoBox(cx - 0.3, cy - 0.3, cx + 0.3, cy + 0.3, 0, 0.52, pot[0], pot[1], pot[2]);
   isoBox(cx - 0.26, cy - 0.26, cx + 0.26, cy + 0.26, 0.52, 0.56, '#6B4B38', '#5A3E2E', '#5A3E2E');
   const base = proj(cx, cy, 0.56);
   const leaves = [
@@ -1322,14 +1620,143 @@ function drawPlant() {
     ctx.translate(base.x, base.y);
     ctx.rotate(L[2]);
     ctx.beginPath();
-    ctx.ellipse(0, L[1] * cam.zh * 0.62, 0.13 * cam.zh, L[1] * -1 * cam.zh * 0.62, 0, 0, Math.PI * 2);
-    ctx.fillStyle = i % 2 ? '#7FA97C' : '#6D9B70';
+    ctx.ellipse(0, L[1] * cam.zh * 0.62 * s, 0.13 * cam.zh * s, L[1] * -1 * cam.zh * 0.62 * s, 0, 0, Math.PI * 2);
+    ctx.fillStyle = THEME.leaf[i % 2];
     ctx.fill();
     ctx.restore();
   });
   ctx.beginPath();
-  ctx.arc(base.x, base.y - 0.25 * cam.zh, 0.1 * cam.zh, 0, Math.PI * 2);
-  ctx.fillStyle = '#7FA97C'; ctx.fill();
+  ctx.arc(base.x, base.y - 0.25 * cam.zh * s, 0.1 * cam.zh * s, 0, Math.PI * 2);
+  ctx.fillStyle = THEME.leaf[0]; ctx.fill();
+}
+
+/* 푸른 정원관 — 중앙 플랜트 박스 */
+function drawPlanterProp(p) {
+  isoBox(p.x0, p.y0, p.x1, p.y1, 0, 0.55, '#CDB18A', '#AB8C63', '#BB9C72');
+  isoBox(p.x0 + 0.06, p.y0 + 0.06, p.x1 - 0.06, p.y1 - 0.06, 0.55, 0.6, '#5B4636', '#4A3829', '#4A3829');
+  const n = 8;
+  for (let i = 0; i < n; i++) {
+    const u = p.x0 + 0.28 + i * (p.x1 - p.x0 - 0.56) / (n - 1);
+    const v = (p.y0 + p.y1) / 2 + (i % 2 ? -0.14 : 0.14);
+    const b = proj(u, v, 0.6);
+    const hgt = (0.42 + (i % 3) * 0.16) * cam.zh;
+    ctx.beginPath();
+    ctx.ellipse(b.x + (i % 2 ? 4 : -4), b.y - hgt * 0.55, 0.085 * cam.zh, hgt * 0.6, (i % 2 ? .55 : -.55), 0, Math.PI * 2);
+    ctx.fillStyle = THEME.leaf[i % 2]; ctx.fill();
+  }
+}
+
+/* 푸른 정원관 — 조각대 */
+function drawPlinthProp(p) {
+  const r = p.r || 0.5, h = p.h || 0.95;
+  ctx.save();
+  ctx.shadowColor = 'rgba(96,66,44,.16)';
+  ctx.shadowBlur = Math.max(5, 10 * cam.scale);
+  ctx.shadowOffsetY = Math.max(1.5, 3 * cam.scale);
+  isoBox(p.x - r, p.y - r, p.x + r, p.y + r, 0, h, '#F5F1E8', '#DDD6C8', '#E8E2D6');
+  ctx.restore();
+  const c = proj(p.x, p.y, h);
+  ctx.save();
+  ctx.strokeStyle = '#B08A5E';
+  ctx.lineWidth = Math.max(1.6, 3.4 * cam.scale);
+  ctx.beginPath(); ctx.ellipse(c.x, c.y - 0.34 * cam.zh, 0.22 * cam.zh, 0.26 * cam.zh, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.lineWidth = Math.max(1, 2 * cam.scale);
+  ctx.beginPath(); ctx.ellipse(c.x, c.y - 0.34 * cam.zh, 0.08 * cam.zh, 0.1 * cam.zh, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+}
+
+/* 노을 아틀리에 — 이젤 */
+function drawEaselProp(p) {
+  const x = p.x, y = p.y;
+  const top = proj(x, y, 1.75);
+  const l1 = proj(x - 0.34, y + 0.2, 0), l2 = proj(x + 0.34, y + 0.2, 0), l3 = proj(x + 0.02, y - 0.3, 0);
+  ctx.save();
+  ctx.strokeStyle = '#A97F52';
+  ctx.lineWidth = Math.max(1.6, 3 * cam.scale);
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(l1.x, l1.y); ctx.lineTo(top.x, top.y);
+  ctx.moveTo(l2.x, l2.y); ctx.lineTo(top.x, top.y);
+  ctx.moveTo(l3.x, l3.y); ctx.lineTo(top.x, top.y - 0.18 * cam.zh);
+  ctx.stroke();
+  // 캔버스
+  const quad = [proj(x - 0.4, y + 0.02, 0.95), proj(x + 0.4, y + 0.02, 0.95), proj(x + 0.4, y + 0.02, 1.55), proj(x - 0.4, y + 0.02, 1.55)];
+  pathPoly(quad); ctx.fillStyle = '#FFFCF3'; ctx.fill();
+  ctx.strokeStyle = '#C9B498'; ctx.lineWidth = Math.max(1, 2 * cam.scale); ctx.stroke();
+  ctx.save(); pathPoly(quad); ctx.clip();
+  const a = proj(x - 0.2, y + 0.02, 1.1), b = proj(x + 0.28, y + 0.02, 1.42);
+  ctx.strokeStyle = 'rgba(196,120,90,.72)';
+  ctx.lineWidth = Math.max(1.2, 2.4 * cam.scale);
+  ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo((a.x + b.x) / 2, a.y - 14 * cam.scale, b.x, b.y); ctx.stroke();
+  ctx.restore();
+  ctx.restore();
+}
+
+/* 노을 아틀리에 — 스탠드 조명 */
+function drawLampProp(p) {
+  const base = proj(p.x, p.y, 0);
+  const top = proj(p.x, p.y, 1.62);
+  const s = cam.scale;
+  const g = ctx.createRadialGradient(base.x, base.y, 2, base.x, base.y, Math.max(60, 130 * s));
+  g.addColorStop(0, 'rgba(255,214,150,.34)');
+  g.addColorStop(1, 'rgba(255,214,150,0)');
+  ctx.save();
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.ellipse(base.x, base.y, Math.max(60, 130 * s), Math.max(26, 62 * s), 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#7A5E42';
+  ctx.lineWidth = Math.max(1.4, 2.6 * s);
+  ctx.beginPath(); ctx.moveTo(base.x, base.y); ctx.lineTo(top.x, top.y); ctx.stroke();
+  ctx.fillStyle = '#8A6A4A';
+  ctx.beginPath(); ctx.ellipse(base.x, base.y, Math.max(7, 13 * s), Math.max(3.5, 6 * s), 0, 0, Math.PI * 2); ctx.fill();
+  const w = 26 * s, h = 16 * s;
+  ctx.beginPath();
+  ctx.moveTo(top.x - w * 0.55, top.y + h * 0.2);
+  ctx.lineTo(top.x + w * 0.55, top.y + h * 0.2);
+  ctx.lineTo(top.x + w, top.y - h);
+  ctx.lineTo(top.x - w, top.y - h);
+  ctx.closePath();
+  ctx.fillStyle = '#F4DFB6'; ctx.fill();
+  ctx.strokeStyle = 'rgba(140,105,70,.40)'; ctx.lineWidth = Math.max(0.8, s); ctx.stroke();
+  ctx.restore();
+}
+
+/* 노을 아틀리에 — 라운지 스툴 */
+function drawStoolProp(p) {
+  const base = proj(p.x, p.y, 0), c = proj(p.x, p.y, 0.44);
+  const rx = Math.max(8, (p.r || 0.3) * (cam.a + cam.b) * 0.85);
+  const ry = rx * 0.44;
+  ctx.save();
+  ctx.fillStyle = 'rgba(80,52,36,.14)';
+  ctx.beginPath(); ctx.ellipse(base.x, base.y, rx * 1.05, ry * 1.05, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#7B5F45'; ctx.lineWidth = Math.max(1.2, 2.2 * cam.scale);
+  ctx.beginPath();
+  ctx.moveTo(c.x - rx * 0.6, c.y); ctx.lineTo(base.x - rx * 0.7, base.y);
+  ctx.moveTo(c.x + rx * 0.6, c.y); ctx.lineTo(base.x + rx * 0.7, base.y);
+  ctx.stroke();
+  ctx.fillStyle = '#B98058';
+  ctx.beginPath(); ctx.ellipse(c.x, c.y + ry * 0.6, rx * 0.92, ry * 0.92, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#DEB084';
+  ctx.beginPath(); ctx.ellipse(c.x, c.y, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+/* 겨울 별빛관 — 금빛 구 조명 */
+function drawGlobeProp(p) {
+  const base = proj(p.x, p.y, 0), c = proj(p.x, p.y, 1.18);
+  const s = cam.scale, r = Math.max(5, 0.26 * cam.zh);
+  const g = ctx.createRadialGradient(c.x, c.y, 1, c.x, c.y, r * 3.6);
+  g.addColorStop(0, 'rgba(255,226,160,.5)');
+  g.addColorStop(1, 'rgba(255,226,160,0)');
+  ctx.save();
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, r * 3.6, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(201,164,92,.85)'; ctx.lineWidth = Math.max(1.2, 2.2 * s);
+  ctx.beginPath(); ctx.moveTo(base.x, base.y); ctx.lineTo(c.x, c.y + r); ctx.stroke();
+  ctx.fillStyle = '#B99A5E';
+  ctx.beginPath(); ctx.ellipse(base.x, base.y, Math.max(5, 8 * s), Math.max(2.5, 4 * s), 0, 0, Math.PI * 2); ctx.fill();
+  const sg = ctx.createRadialGradient(c.x - r * 0.3, c.y - r * 0.35, 1, c.x, c.y, r);
+  sg.addColorStop(0, '#FFF3CF'); sg.addColorStop(0.6, '#F0D291'); sg.addColorStop(1, '#C9A45C');
+  ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
 }
 
 function drawShadowUnderRoom() {
@@ -1499,6 +1926,7 @@ function drawTargetMark() {
 }
 
 function draw() {
+  const T = useRoom(S.view.room);
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.clearRect(0, 0, CW, CH);
   drawBackdrop();
@@ -1514,15 +1942,16 @@ function draw() {
   drawFloor();
   drawWallBase('A');
   drawWallBase('B');
+  drawWallDecor();
 
   // 벽에 걸린 액자 — 이 방의 작품을 관(페이지) 단위로 나눠 26칸에 차례로 겁니다.
   const roomList = roomWorks(S.view.year, S.view.room, S.view.artist, 'asc');
-  const plan = hallPlan(roomList.length);
+  const plan = hallPlan(roomList.length, T._slots.length);
   const hall = clamp(S.view.hall || 1, 1, plan.halls);
   const list = roomList.slice((hall - 1) * plan.per, hall * plan.per);
   const assign = {};
-  SLOT_ORDER.forEach((key, i) => { if (list[i]) assign[key] = list[i]; });
-  const allSlots = SLOTS;
+  T._order.forEach((key, i) => { if (list[i]) assign[key] = list[i]; });
+  const allSlots = T._slots;
 
   const paintPlane = (plane) => {
     allSlots.filter(s => s.plane === plane).forEach(s => drawFrame(s, assign[s.key] || null));
@@ -1530,9 +1959,9 @@ function draw() {
   paintPlane('B');
   paintPlane('A');
 
-  // 앞쪽 구조물·사람은 깊이 순서로
+  // 앞쪽 구조물·소품·사람은 깊이 순서로
   const objs = [];
-  PARTITIONS.forEach(p => {
+  T.partitions.forEach(p => {
     objs.push({
       depth: p.axis === 'x' ? (p.from + p.to) / 2 + p.at : p.at + (p.from + p.to) / 2,
       draw: () => {
@@ -1541,8 +1970,9 @@ function draw() {
       }
     });
   });
-  objs.push({ depth: 1.05 + 8.9, draw: drawPlant });
-  objs.push({ depth: 9.6 + 7.45, draw: drawBench });
+  T.props.forEach(p => {
+    objs.push({ depth: (p.x0 + p.x1) / 2 + (p.y0 + p.y1) / 2, draw: () => drawProp(p) });
+  });
   objs.push({ depth: char.x + char.y, draw: drawPerson });
   objs.sort((a, b) => a.depth - b.depth).forEach(o => o.draw());
 
@@ -1562,14 +1992,12 @@ function draw() {
 
 /* ─────────────────────────── 10. 캐릭터 이동 ─────────────────────────── */
 function propRects() {
-  // 바닥에 놓인 가구 — 캐릭터가 그 위에 서지 않도록 막습니다.
-  return [
-    { x0: 8.75, x1: 10.45, y0: 7.05, y1: 7.85 },   // 벤치
-    { x0: 0.75, x1: 1.35, y0: 8.6, y1: 9.2 }      // 화분
-  ];
+  // 바닥에 놓인 가구·소품 — 캐릭터가 그 위에 서지 않도록 막습니다(방마다 다름).
+  return roomDef(S.view.room).props.map(p => ({ x0: p.x0, x1: p.x1, y0: p.y0, y1: p.y1 }));
 }
 function blockerRects() {
-  const walls = PARTITIONS.map(p => p.axis === 'x'
+  const ps = roomDef(S.view.room).partitions;
+  const walls = ps.map(p => p.axis === 'x'
     ? { x0: p.from - 0.28, x1: p.to + 0.28, y0: p.at - 0.28, y1: p.at + p.t + 0.28 }
     : { x0: p.at - 0.28, x1: p.at + p.t + 0.28, y0: p.from - 0.28, y1: p.to + 0.28 });
   const props = propRects().map(r => ({ x0: r.x0 - 0.22, x1: r.x1 + 0.22, y0: r.y0 - 0.22, y1: r.y1 + 0.22 }));
@@ -1591,7 +2019,7 @@ function planPath(from, to) {
   const rects = blockerRects();
   if (!rects.some(r => segHitsRect(from, to, r))) return [to];
   const cands = [];
-  PARTITIONS.forEach(p => {
+  roomDef(S.view.room).partitions.forEach(p => {
     if (p.axis === 'x') {
       cands.push({ x: p.from - 0.75, y: p.at + p.t / 2 });
       cands.push({ x: p.to + 0.75, y: p.at + p.t / 2 });
@@ -1637,6 +2065,23 @@ function walkTo(target) {
   char.path = planPath({ x: char.x, y: char.y }, t);
   dirty = true;
   hideHint();
+}
+/* 가벽·소품 배치가 바뀌어도 캐릭터가 갇히지 않게, 설 수 있는 자리를 찾아 놓습니다. */
+function canStand(x, y, m) {
+  m = m || 0.3;
+  if (x < 0.6 + m || x > VIEW.W - 0.6 - m || y < 0.6 + m || y > VIEW.D - 0.6 - m) return false;
+  return !blockerRects().some(r => x > r.x0 - m && x < r.x1 + m && y > r.y0 - m && y < r.y1 + m);
+}
+function spawnChar() {
+  const spots = [[7.6, 7.4], [7.9, 7.0], [3.0, 8.8], [10.6, 6.2], [6.0, 2.6], [2.0, 5.0], [9.6, 2.0]];
+  for (let i = 0; i < spots.length; i++) {
+    if (canStand(spots[i][0], spots[i][1], 0.34)) {
+      char.x = spots[i][0]; char.y = spots[i][1]; char.path = [];
+      return { x: char.x, y: char.y };
+    }
+  }
+  char.x = 7.6; char.y = 7.4; char.path = [];
+  return { x: char.x, y: char.y };
 }
 function unproject(px, py) {
   const dx = px - cam.ox, dy = py - cam.oy;
@@ -1719,17 +2164,18 @@ function renderChrome() {
   $('#museumTitle').textContent = S.settings.museumTitle || '우리 가족 미술관';
 
   const years = floorYears();
-  const fl = floorOf(S.view.year);
+  const fl = floorLabel(S.view.year);
+  const T = roomDef(S.view.room);
   const rw = roomWorks(S.view.year, S.view.room, S.view.artist, 'asc');
-  const plan = hallPlan(rw.length);
+  const plan = hallPlan(rw.length, T._slots.length);
   const halls = plan.halls;
   S.view.hall = clamp(S.view.hall || 1, 1, halls);
   const narrow = CW < 700;
   const viewTag = (S.mode === 'view' && narrow) ? '관람 전용 · ' : '';
   const hallTag = halls > 1 ? (' · ' + S.view.hall + '관') : '';
   $('#placeLine').textContent = viewTag + (narrow
-    ? (fl + '층 ' + S.view.year + ' · ' + S.view.room + '실 · ' + rw.length + '점' + (S.demo ? ' · 예시' : ''))
-    : (fl + '층 · ' + S.view.year + '년 · ' + S.view.room + '실 (' + ROOMS[S.view.room - 1].label + ') · 작품 ' + rw.length + '점' + hallTag + (S.demo ? ' · 예시 작품' : '')));
+    ? (fl + ' ' + S.view.year + ' · ' + S.view.room + '실 · ' + rw.length + '점' + (S.demo ? ' · 예시' : ''))
+    : (fl + ' · ' + S.view.year + '년 · ' + S.view.room + '실 ' + T.name + ' (' + ROOMS[S.view.room - 1].label + ') · 작품 ' + rw.length + '점' + hallTag + (S.demo ? ' · 예시 작품' : '')));
 
   // 전시 구역(관) — 방 하나에 26칸을 넘으면 같은 방 안에서 1관·2관으로 나눠 봅니다.
   const hallsEl = $('#halls');
@@ -1758,13 +2204,30 @@ function renderChrome() {
 
   // 층 (데스크톱: 세로 엘리베이터 / 좁은 화면: 가로 칩)
   function floorBtn(y) {
-    const n = years.indexOf(y) + 1;
-    return '<button data-year="' + y + '" class="' + (S.view.year === y ? 'on' : '') + '" aria-label="' + n + '층 ' + y + '년">' +
-      '<span class="fl">' + n + '층</span><span class="yr">' + y + '</span></button>';
+    const lab = floorLabel(y);
+    return '<button data-year="' + y + '" class="' + (S.view.year === y ? 'on' : '') + '" aria-label="' + lab + ' ' + y + '년">' +
+      '<span class="fl">' + lab + '</span><span class="yr">' + y + '</span></button>';
   }
   const addYr = '<button class="addyr" aria-label="새 연도 층 추가"><span class="fl">＋</span><span class="yr">연도</span></button>';
   $('#elevator').innerHTML = years.slice().reverse().map(floorBtn).join('') + addYr;
   $('#floorChips').innerHTML = years.slice().reverse().map(floorBtn).join('') + addYr;
+  // 층이 많아도 지금 보는 층이 가려지지 않게, 필요할 때만 그 칩이 보이도록 밀어 줍니다.
+  [['#floorChips', 'x'], ['#elevator', 'y']].forEach(pair => {
+    const box = $(pair[0]);
+    const on = box && box.querySelector('[data-year].on');
+    if (!box || !on) return;
+    if (pair[1] === 'x') {
+      const left = on.offsetLeft, right = left + on.offsetWidth;
+      if (left < box.scrollLeft || right > box.scrollLeft + box.clientWidth) {
+        box.scrollLeft = Math.max(0, left - 6);
+      }
+    } else {
+      const top = on.offsetTop, bottom = top + on.offsetHeight;
+      if (top < box.scrollTop || bottom > box.scrollTop + box.clientHeight) {
+        box.scrollTop = Math.max(0, top - 6);
+      }
+    }
+  });
 
   // 캐릭터
   const cast = $('#cast');
@@ -1948,8 +2411,7 @@ async function saveArtwork() {
     S.view.artist = 'all';
     S.view.hall = 1;
     saveLocal();
-    char.path = [];
-    char.x = 4.8; char.y = 6.6;
+    spawnChar();
     closeModal('#mUpload');
     renderChrome();
     if (S.sheetUrl) schedulePush(300);
@@ -2448,7 +2910,7 @@ function loadDemo() {
   }));
   const y = new URLSearchParams(location.search).get('y');
   const r = new URLSearchParams(location.search).get('r');
-  S.view.year = y ? parseInt(y, 10) : 2026;
+  S.view.year = y ? parseInt(y, 10) : BASE_YEAR;
   S.view.room = r ? parseInt(r, 10) : 1;
 }
 
@@ -2458,19 +2920,83 @@ function switchRoom(room) {
   S.view.room = room;
   S.view.hall = 1;
   anim.fade = 1;
-  char.path = [];
+  useRoom(room);
+  // 방마다 가벽·소품이 달라서, 서 있던 자리가 막혔으면 안전한 자리로 옮깁니다.
+  if (!canStand(char.x, char.y, 0.06)) spawnChar(); else char.path = [];
   saveLocal();
   renderChrome();
 }
 function switchYear(year) {
-  const years = floorYears();
-  if (years.indexOf(year) < 0) years.push(year);
-  S.view.year = year;
+  const y = parseInt(year, 10);
+  if (isNaN(y)) return;
+  ensureYear(y);
+  S.view.year = y;
   S.view.hall = 1;
   anim.fade = 1;
   char.path = [];
   saveLocal();
   renderChrome();
+}
+
+/* ── 층(연도) 관리 ── */
+function yearOptions() {
+  const years = floorYears();
+  return { years: years, prev: Math.min.apply(null, years) - 1, next: Math.max.apply(null, years) + 1 };
+}
+function renderYearList() {
+  const box = $('#yrList');
+  if (!box) return;
+  const opt = yearOptions();
+  box.innerHTML = opt.years.slice().sort((a, b) => b - a).map(y => {
+    const n = S.artworks.filter(a => yearOf(a.date) === y).length;
+    const base = y === BASE_YEAR;
+    const cur = S.view.year === y;
+    const state = base ? '기준 연도' : (n ? ('작품 ' + n + '점') : '빈 층');
+    const btn = base
+      ? '<button class="mini" disabled>기본 층</button>'
+      : (n
+        ? '<button class="mini" data-delyear="' + y + '" title="작품이 있어 지울 수 없어요">지우기</button>'
+        : '<button class="mini danger" data-delyear="' + y + '">지우기</button>');
+    return '<div class="yrrow' + (cur ? ' on' : '') + '">' +
+      '<b class="fl">' + floorLabel(y) + '</b><span class="yr">' + y + '년</span>' +
+      '<span class="cnt">' + state + '</span>' + btn + '</div>';
+  }).join('');
+  const pn = $('#yrPrevNum'), nn = $('#yrNextNum');
+  if (pn) pn.textContent = (opt.prev >= 1900 && opt.prev <= 2200) ? (opt.prev + '년 (' + floorLabel(opt.prev) + ')') : '—';
+  if (nn) nn.textContent = (opt.next >= 1900 && opt.next <= 2200) ? (opt.next + '년 (' + floorLabel(opt.next) + ')') : '—';
+}
+function openYearModal() {
+  if (S.mode === 'view') { toast('관람 전용에서는 층을 관리할 수 없어요'); return; }
+  renderYearList();
+  const inp = $('#yrInput');
+  if (inp) inp.value = '';
+  openModal('#mYears');
+}
+function addYear(year) {
+  if (S.mode === 'view') { toast('관람 전용에서는 층을 열 수 없어요'); return; }
+  const y = parseInt(year, 10);
+  if (isNaN(y) || y < 2000 || y > 2100) { toast('연도는 2000 ~ 2100 사이로 넣어 주세요'); return; }
+  const had = floorYears().indexOf(y) >= 0;
+  if (!had) { S.extraYears.push(y); saveLocal(); }
+  switchYear(y);
+  renderYearList();
+  closeModal('#mYears');
+  toast(had ? (y + '년 ' + floorLabel(y) + '으로 이동했어요') : (y + '년 (' + floorLabel(y) + ') 층을 열었어요'));
+}
+function deleteYear(year) {
+  const y = parseInt(year, 10);
+  if (isNaN(y)) return;
+  if (y === BASE_YEAR) { toast('2026년은 기본 1층이라 지울 수 없어요'); return; }
+  const n = S.artworks.filter(a => yearOf(a.date) === y).length;
+  if (n > 0) { toast('이 층에 작품 ' + n + '점이 있어 지울 수 없어요'); return; }
+  S.extraYears = S.extraYears.filter(v => parseInt(v, 10) !== y);
+  const wasHere = S.view.year === y;
+  if (wasHere) { S.view.year = BASE_YEAR; S.view.room = 1; S.view.hall = 1; anim.fade = 1; }
+  saveLocal();
+  renderChrome();
+  renderYearList();
+  if (wasHere) { spawnChar(); closeModal('#mYears'); }
+  toast(y + '년 (' + floorLabel(y) + ') 층을 지웠어요');
 }
 function bindEvents() {
   canvas.addEventListener('pointerdown', e => {
@@ -2508,16 +3034,12 @@ function bindEvents() {
     }
     const yr = e.target.closest('[data-year]');
     if (yr) { switchYear(parseInt(yr.dataset.year, 10)); return; }
-    if (e.target.closest('.addyr')) {
-      if (S.mode === 'view') { toast('관람 전용에서는 층을 추가할 수 없어요'); return; }
-      const years = floorYears();
-      const next = Math.max.apply(null, years) + 1;
-      S.extraYears.push(next);
-      saveLocal();
-      switchYear(next);
-      toast(next + '년 층을 열었어요');
-      return;
-    }
+    if (e.target.closest('.addyr')) { openYearModal(); return; }
+    const dy = e.target.closest('[data-delyear]');
+    if (dy) { deleteYear(dy.dataset.delyear); return; }
+    if (e.target.closest('#yrPrev')) { addYear(yearOptions().prev); return; }
+    if (e.target.closest('#yrNext')) { addYear(yearOptions().next); return; }
+    if (e.target.closest('#yrAdd')) { addYear($('#yrInput').value); return; }
     const ch = e.target.closest('#cast [data-char]');
     if (ch) {
       S.character = ch.dataset.char;
@@ -2543,9 +3065,9 @@ function bindEvents() {
     if (e.target.closest('#btnShare')) { renderChrome(); openModal('#mShare'); return; }
     if (e.target.closest('#btnSettings')) { openSettings(); return; }
     if (e.target.closest('#btnDemoClear')) {
-      S.demo = false; S.artworks = []; S.view.year = new Date().getFullYear(); S.view.room = 1;
+      S.demo = false; S.artworks = []; S.view.year = BASE_YEAR; S.view.room = 1;
       S.extraYears = [];
-      saveLocal(); renderChrome(); toast('예시 작품을 지웠어요');
+      saveLocal(); renderChrome(); spawnChar(); toast('예시 작품을 지웠어요');
       closeModal('#mSettings');
       return;
     }
@@ -2589,9 +3111,10 @@ function bindEvents() {
     if (e.target.closest('#btnReset')) {
       if (!confirm('이 기기에 저장된 작품 목록을 모두 지울까요?\n드라이브 원본 사진은 지워지지 않습니다.')) return;
       S.artworks = []; S.extraYears = []; S.demo = false;
+      S.view.year = BASE_YEAR; S.view.room = 1; S.view.hall = 1;
       try { localStorage.removeItem(LS_KEY); } catch (e) {}
       Pending.all().then(items => items.forEach(i => Pending.del(i.id)));
-      renderChrome(); toast('이 기기 기록을 지웠어요');
+      renderChrome(); spawnChar(); toast('이 기기 기록을 지웠어요');
       return;
     }
   });
@@ -2747,8 +3270,9 @@ function init() {
       : '그림을 누르면 크게 보여요 · 어른들은 위 <b>「큰 사진 앨범」</b>을 눌러 보세요';
   }
   syncScreenButtons();
-  if (!S.view.year) S.view.year = new Date().getFullYear();
+  if (!S.view.year) S.view.year = BASE_YEAR;
   if (!S.view.room) S.view.room = 1;
+  useRoom(S.view.room);
 
   bindEvents();
   initPad();
@@ -2789,10 +3313,33 @@ function init() {
     charLabel: () => personLabel(S.character),
     proj: (x, y, z) => proj(x, y, z || 0),
     floorOf: (y) => floorOf(y),
-    slots: () => SLOTS.length,
-    slotsInfo: () => SLOTS.map(s => ({ key: s.key, plane: s.plane, u: +s.u.toFixed(2), z: s.z, w: +s.w.toFixed(2), h: s.h })),
-    halls: () => hallPlan(roomWorks(S.view.year, S.view.room, S.view.artist, 'asc').length).halls,
-    hallPer: () => hallPlan(roomWorks(S.view.year, S.view.room, S.view.artist, 'asc').length).per,
+    floorLabel: (y) => floorLabel(y),
+    years: () => floorYears(),
+    extraYears: () => (S.extraYears || []).slice(),
+    baseYear: () => BASE_YEAR,
+    themes: () => ROOM_THEMES.map(t => ({
+      id: t.id, name: t.name, tone: t.tone, slots: roomDef(t.id)._slots.length,
+      partitions: t.partitions.map(p => ({ id: p.id, axis: p.axis, at: p.at, from: p.from, to: p.to, n: p.n })),
+      props: t.props.map(p => p.type), wallA: t.wall.A.slice(), floorC: t.floor.c.slice(), rug: t.rug.a
+    })),
+    theme: () => {
+      const t = roomDef(S.view.room);
+      return {
+        id: t.id, name: t.name, tone: t.tone, slots: t._slots.length,
+        partitions: t.partitions.map(p => ({ id: p.id, axis: p.axis, at: p.at, from: p.from, to: p.to, n: p.n })),
+        props: t.props.map(p => p.type), wallA: t.wall.A.slice(), floorC: t.floor.c.slice(), rug: t.rug.a
+      };
+    },
+    blockers: () => blockerRects().map(r => ({ x0: +r.x0.toFixed(2), x1: +r.x1.toFixed(2), y0: +r.y0.toFixed(2), y1: +r.y1.toFixed(2) })),
+    props: () => propRects().map(r => ({ x0: +r.x0.toFixed(2), x1: +r.x1.toFixed(2), y0: +r.y0.toFixed(2), y1: +r.y1.toFixed(2) })),
+    insideBlocker: (x, y) => insideBlocker(x, y),
+    canStand: (x, y, m) => canStand(x, y, m),
+    pathTo: (x, y) => planPath({ x: char.x, y: char.y }, { x: x, y: y }).map(p => ({ x: +p.x.toFixed(2), y: +p.y.toFixed(2) })),
+    walk: (x, y) => { walkTo({ x: x, y: y }); return { x: char.x, y: char.y, path: char.path.length }; },
+    slots: () => roomDef(S.view.room)._slots.length,
+    slotsInfo: () => roomDef(S.view.room)._slots.map(s => ({ key: s.key, plane: s.plane, u: +s.u.toFixed(2), z: s.z, w: +s.w.toFixed(2), h: s.h })),
+    halls: () => hallPlan(roomWorks(S.view.year, S.view.room, S.view.artist, 'asc').length, roomDef(S.view.room)._slots.length).halls,
+    hallPer: () => hallPlan(roomWorks(S.view.year, S.view.room, S.view.artist, 'asc').length, roomDef(S.view.room)._slots.length).per,
     hall: () => S.view.hall,
     screen: () => S.screen,
     album: () => ({
@@ -2809,8 +3356,8 @@ function init() {
   };
 
   // 첫 화면에서 캐릭터가 살짝 걸어 나오는 연출
-  char.x = 4.5; char.y = 6.5;
-  char.path = [{ x: 5.1, y: 7.0 }];
+  spawnChar();
+  char.path = [{ x: clamp(char.x + 0.3, 0.6, VIEW.W - 0.6), y: clamp(char.y - 0.4, 0.6, VIEW.D - 0.6) }];
   setTimeout(() => { dirty = true; }, 30);
 }
 
