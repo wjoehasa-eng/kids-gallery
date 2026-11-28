@@ -380,10 +380,11 @@
     .actions{gap:6px}
     #syncDot{display:none}
     .elevator{display:none}
-    /* 좁은 화면: 작가 필터와 층 칩을 각각 한 줄로 내려 잘리지 않게 합니다 */
+    /* 좁은 화면: 연도 → 1~4실 → 사람 순으로 한 줄씩 내려 잘리지 않게 합니다 */
     .strips2{display:grid;grid-template-columns:1fr;gap:6px}
     .strips2 .seg.artists{justify-self:start;max-width:100%}
-    .strips2 .seg.floors{justify-self:stretch;max-width:100%;margin-left:0}
+    .strips.floorsrow{display:flex}
+    .seg.floors{margin-left:0;max-width:100%}
     .seg.floors .fl{font-size:12px} .seg.floors .yr{font-size:10px}
     .seg button{padding:6px 8px;font-size:11.5px}
     .cast button span{display:none} .cast button{padding:5px}
@@ -420,7 +421,13 @@
     .seg.scope button{font-size:13.5px;padding:8px 12px;min-height:40px}
     .acard .tx b{font-size:18px}
   }
-  @media (min-width:701px){ .seg.floors{display:none} }
+  /* 넓은 화면에서는 층을 왼쪽 엘리베이터로 고릅니다. 큰 사진 앨범에서는 엘리베이터가 숨겨지므로 연도 칩을 보여 줍니다. */
+  @media (min-width:701px){
+    .seg.floors{display:none}
+    .floorsrow{display:none}
+    body.album-mode .floorsrow{display:flex}
+    body.album-mode .seg.floors{display:inline-flex;margin-left:0;max-width:100%}
+  }
   /* 넓은 화면에서는 전환 탭을 첫 줄 가운데로 올려 전시실에 높이를 더 줍니다 */
   @media (min-width:1100px){
     .viewtabs{position:absolute;left:50%;top:calc(10px + env(safe-area-inset-top));transform:translateX(-50%);width:430px}
@@ -467,13 +474,16 @@
     <button data-screen="album" role="tab" aria-selected="false"><span class="em" aria-hidden="true">📖</span>큰 사진 앨범</button>
   </div>
 
+  <!-- 위에서부터 연도 → 전시실(1~4실) → 사람 순으로 놓습니다 -->
+  <div class="strips floorsrow">
+    <div class="seg floors" id="floorChips" aria-label="층 선택"></div>
+  </div>
   <div class="strips">
     <div class="seg" id="rooms" role="tablist" aria-label="전시실"></div>
     <div class="seg halls" id="halls" aria-label="전시 구역" hidden></div>
   </div>
   <div class="strips strips2">
     <div class="seg artists" id="artistFilter" role="tablist" aria-label="작가"></div>
-    <div class="seg floors" id="floorChips" aria-label="층 선택"></div>
   </div>
 
   <nav class="elevator" id="elevator" aria-label="층 선택"></nav>
@@ -501,8 +511,8 @@
       <h2>📖 큰 사진 앨범</h2>
       <span class="cnt" id="albumCount"></span>
       <div class="seg scope" id="albumScope" role="tablist" aria-label="앨범 범위">
-        <button data-scope="room" class="on" role="tab" aria-selected="true">이 방</button>
-        <button data-scope="all" role="tab" aria-selected="false">전체 작품</button>
+        <button data-scope="room" role="tab" aria-selected="false">이 방</button>
+        <button data-scope="all" class="on" role="tab" aria-selected="true">전체 작품</button>
       </div>
     </div>
     <div class="album-grid" id="albumGrid"></div>
@@ -694,7 +704,7 @@
 'use strict';
 
 /* ─────────────────────────── 0. 상수 ─────────────────────────── */
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.2.1';
 const LS_KEY = 'kids-gallery.v1';
 const LS_PREFS = 'kids-gallery.prefs';
 const THUMB_MAX_SIDE = 520;
@@ -949,7 +959,8 @@ const S = {
   extraYears: [],
   sync: 'off',
   screen: 'museum',   // 'museum' = 미술관 산책, 'album' = 큰 사진 앨범
-  albumScope: 'room'  // 앨범 범위: 'room' = 이 방, 'all' = 전체 작품
+  albumScope: 'all',  // 앨범 범위: 'room' = 이 방, 'all' = 전체 작품 (들어올 때마다 '전체 작품'이 기본)
+  albumYear: 'all'    // 앨범 연도: 'all' = 전체 연도, 숫자 = 그 해만 (들어올 때마다 '전체 연도'가 기본)
 };
 let prefs = { pad: null, hintSeen: false };
 
@@ -2464,12 +2475,22 @@ function renderChrome() {
       '<span class="fl">' + lab + '</span><span class="yr">' + y + '</span></button>';
   }
   const addYr = '<button class="addyr" aria-label="새 연도 층 추가"><span class="fl">＋</span><span class="yr">연도</span></button>';
+  // 큰 사진 앨범에서는 연도를 고르는 칩이 앨범 목록을 거릅니다('전체 연도'부터 시작).
+  function albumFloorBtn(y) {
+    const lab = floorLabel(y);
+    return '<button data-album-year="' + y + '" class="' + (S.albumYear === y ? 'on' : '') + '" aria-label="' + lab + ' ' + y + '년 작품만 보기">' +
+      '<span class="fl">' + lab + '</span><span class="yr">' + y + '</span></button>';
+  }
+  const allYearsBtn = '<button data-album-year="all" class="' + (S.albumYear === 'all' ? 'on' : '') + '" aria-label="전체 연도">' +
+    '<span class="fl">전체</span><span class="yr">연도</span></button>';
   $('#elevator').innerHTML = years.slice().reverse().map(floorBtn).join('') + addYr;
-  $('#floorChips').innerHTML = years.slice().reverse().map(floorBtn).join('') + addYr;
+  $('#floorChips').innerHTML = S.screen === 'album'
+    ? ((S.albumScope === 'all' ? allYearsBtn : '') + years.slice().reverse().map(albumFloorBtn).join(''))
+    : (years.slice().reverse().map(floorBtn).join('') + addYr);
   // 층이 많아도 지금 보는 층이 가려지지 않게, 필요할 때만 그 칩이 보이도록 밀어 줍니다.
   [['#floorChips', 'x'], ['#elevator', 'y']].forEach(pair => {
     const box = $(pair[0]);
-    const on = box && box.querySelector('[data-year].on');
+    const on = box && box.querySelector('[data-year].on, [data-album-year].on');
     if (!box || !on) return;
     if (pair[1] === 'x') {
       const left = on.offsetLeft, right = left + on.offsetWidth;
@@ -3266,11 +3287,36 @@ function stepPhoto(d) {
 }
 
 /* ─────────────────────────── 17. 큰 사진 앨범 (어른용) ─────────────────────────── */
+function albumYearValue() {
+  return (S.albumYear === 'all') ? 'all' : (parseInt(S.albumYear, 10) || 'all');
+}
 function albumList() {
   if (S.albumScope === 'all') {
-    return S.artworks.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    // 전체 작품 — 모든 연도·모든 방의 작품을 최신순으로. 연도·사람 칩을 누르면 그 조건만 거릅니다.
+    let list = S.artworks.slice();
+    const y = albumYearValue();
+    if (y !== 'all') list = list.filter(a => yearOf(a.date) === y);
+    if (S.view.artist !== 'all') list = list.filter(a => a.artist === S.view.artist);
+    return list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
   }
-  return roomWorks(S.view.year, S.view.room, S.view.artist, 'asc');
+  // 이 방 — 지금 보고 있는 방 기준(연도가 '전체'일 수는 없고, 그때는 지금 층으로 맞춥니다).
+  const y = albumYearValue();
+  return roomWorks(y === 'all' ? S.view.year : y, S.view.room, S.view.artist, 'asc');
+}
+/* 앨범 범위(이 방 / 전체 작품) — '이 방'으로 바꿀 때 연도가 '전체'면 지금 층으로 맞춥니다. */
+function setAlbumScope(scope) {
+  S.albumScope = scope === 'room' ? 'room' : 'all';
+  if (S.albumScope === 'room' && albumYearValue() === 'all') {
+    S.albumYear = S.view.year;
+    toast('「이 방」은 ' + S.view.year + '년 ' + S.view.room + '실 작품이에요');
+  }
+  renderChrome();
+}
+/* 앨범 연도 칩 — '전체 연도' 또는 그 해만 보기 */
+function setAlbumYear(v) {
+  const y = (v === 'all') ? 'all' : (parseInt(v, 10) || 'all');
+  S.albumYear = (S.albumScope === 'room' && y === 'all') ? S.view.year : y;
+  renderChrome();
 }
 function bigImageSrc(a, pi) {
   const ps = ensurePhotos(a);
@@ -3334,7 +3380,11 @@ function renderAlbum() {
   const g = $('#albumGrid');
   if (!g) return;
   const list = albumList();
-  $('#albumCount').textContent = list.length + '점' + (S.albumScope === 'all' ? ' · 전체' : '');
+  const bits = [];
+  if (S.albumScope === 'all') bits.push('전체');
+  if (albumYearValue() !== 'all') bits.push(albumYearValue() + '년');
+  if (S.view.artist !== 'all') bits.push(artistLabel(S.view.artist));
+  $('#albumCount').textContent = list.length + '점' + (bits.length ? ' · ' + bits.join(' · ') : '');
   if (!list.length) {
     g.innerHTML = '<p class="album-empty">아직 걸린 작품이 없어요.<br>미술관에서 <b>＋ 작품 올리기</b>로 첫 작품을 걸어 주세요.</p>';
   } else {
@@ -3363,10 +3413,26 @@ function syncScreenButtons() {
 }
 function setScreen(name) {
   S.screen = name === 'album' ? 'album' : 'museum';
+  if (S.screen === 'album') {
+    // 큰 사진 앨범에 들어올 때마다 '전체 연도 · 전체 사람 · 전체 작품'으로 시작합니다.
+    S.albumScope = 'all';
+    S.albumYear = 'all';
+    S.view.artist = 'all';
+  } else {
+    // 미술관 산책으로 나가면 인물은 '전체', 연도는 앨범에서 보고 있던 층(있으면)으로 맞춥니다.
+    S.view.artist = 'all';
+    const y = albumYearValue();
+    if (y !== 'all' && floorYears().indexOf(y) >= 0) {
+      S.view.year = y;
+      S.view.hall = 1;
+      char.path = [];
+    }
+  }
   document.body.classList.toggle('album-mode', S.screen === 'album');
   closeAll();
+  saveLocal();
+  renderChrome();
   if (S.screen === 'album') {
-    renderAlbum();
     $('#albumView').scrollTop = 0;
   } else {
     computeCam();
@@ -3507,6 +3573,11 @@ function switchRoom(room) {
   S.view.room = room;
   S.view.hall = 1;
   anim.fade = 1;
+  // 큰 사진 앨범에서 방을 누르면 그 방 작품으로 좁혀 보여 줍니다.
+  if (S.screen === 'album' && S.albumScope === 'all') {
+    S.albumScope = 'room';
+    if (albumYearValue() === 'all') S.albumYear = S.view.year;
+  }
   useRoom(room);
   // 방마다 가벽·소품이 달라서, 서 있던 자리가 막혔으면 안전한 자리로 옮깁니다.
   if (!canStand(char.x, char.y, 0.06)) spawnChar(); else char.path = [];
@@ -3619,8 +3690,10 @@ function bindEvents() {
       saveLocal(); renderChrome();
       return;
     }
-    const yr = e.target.closest('[data-year]');
-    if (yr) { switchYear(parseInt(yr.dataset.year, 10)); return; }
+    const yr = e.target.closest('[data-album-year]');
+    if (yr) { setAlbumYear(yr.dataset.albumYear); return; }
+    const yr2 = e.target.closest('[data-year]');
+    if (yr2) { switchYear(parseInt(yr2.dataset.year, 10)); return; }
     if (e.target.closest('.addyr')) { openYearModal(); return; }
     const dy = e.target.closest('[data-delyear]');
     if (dy) { deleteYear(dy.dataset.delyear); return; }
@@ -3637,7 +3710,7 @@ function bindEvents() {
     const vt = e.target.closest('#viewTabs [data-screen]');
     if (vt) { setScreen(vt.dataset.screen); return; }
     const sc = e.target.closest('#albumScope [data-scope]');
-    if (sc) { S.albumScope = sc.dataset.scope; renderAlbum(); return; }
+    if (sc) { setAlbumScope(sc.dataset.scope); return; }
     const ac = e.target.closest('#albumGrid [data-art]');
     if (ac) { openArtwork(ac.dataset.art, albumList(), albumPhotoIdx[ac.dataset.art] || 0); return; }
     const hb = e.target.closest('#halls [data-hall]');
@@ -3896,6 +3969,8 @@ function init() {
   syncScreenButtons();
   if (!S.view.year) S.view.year = BASE_YEAR;
   if (!S.view.room) S.view.room = 1;
+  // 인물(작가) 필터는 페이지에 들어올 때마다 '전체'로 시작합니다.
+  S.view.artist = 'all';
   useRoom(S.view.room);
 
   bindEvents();
@@ -3968,6 +4043,8 @@ function init() {
     screen: () => S.screen,
     album: () => ({
       scope: S.albumScope,
+      year: S.albumYear,
+      artist: S.view.artist,
       count: document.querySelectorAll('#albumGrid .acard').length,
       heads: Array.prototype.map.call(document.querySelectorAll('#albumGrid .acard .tx b'), n => n.textContent)
     }),
