@@ -1,5 +1,5 @@
 /**
- * 가족 미술관 — 구글 시트 + 드라이브 백엔드 (Google Apps Script) v1.0.0
+ * 가족 미술관 — 구글 시트 + 드라이브 백엔드 (Google Apps Script) v1.1.0
  * =====================================================================
  * 아이들의 작품 사진 원본은 구글 드라이브 폴더에, 목록 정보는 구글 시트에 쌓입니다.
  * 집에서 쓰는 웹앱(index.html)이 이 웹 앱에 접속해 읽고 씁니다.
@@ -20,13 +20,22 @@
  *
  *  코드를 고친 뒤에는 반드시 배포 → 배포 관리 → 수정(연필) → 버전: 새 버전 → 배포.
  *
+ * ── v1.1.0 에서 달라진 점 (앱 v2.2.0 — 사진 회전·여러 장) ────────────────────
+ *  · 작품목록 시트에 photos 열(13번째)이 생겼습니다. 기존 12열 시트는 머리글만 자동으로 덧붙습니다.
+ *  · upload 한 번에 사진 여러 장(images)을 받아 모두 드라이브에 저장합니다.
+ *  · 예전 앱(v1.0.0)의 한 장 업로드와 예전 12열 시트도 그대로 동작합니다.
+ *
  * ── 시트 구성 (없으면 자동으로 만듭니다) ──────────────────────────────
  *  · 작품목록 : id | date | year | room | artist | title | memo |
- *               driveFileId | driveUrl | thumbUrl | createdAt | updatedAt
+ *               driveFileId | driveUrl | thumbUrl | createdAt | updatedAt | photos
  *      - date  : 전시 날짜(YYYY-MM-DD). 연도·분기(전시실)는 이 날짜에서 정해집니다.
  *      - artist: a1 / a2  (아이 1 / 아이 2)
  *      - year  : 2026 …
  *      - room  : 1~4  (1실 1~3월 · 2실 4~6월 · 3실 7~9월 · 4실 10~12월)
+ *      - photos: 한 액자(작품)에 담은 사진 여러 장을 JSON 문자열로 적습니다.
+ *                [{"id":"p1","fileId":"…","thumbUrl":"…","w":1200,"h":900,"rot":0}, …]
+ *                첫 번째 사진이 대표며 driveFileId·driveUrl·thumbUrl 열에도 같은 값이 들어갑니다.
+ *                v1.0.0 시트(12열)를 그대로 쓰고 있으면 이 열을 자동으로 덧붙입니다.
  *  · 설정     : 항목 | 값 | 비고
  *      - museumTitle, artist1, artist2, dadName, momName, kid1Name, kid2Name
  *      - 실제 아이 이름 같은 표시 이름은 여기에만 둡니다. (스크립트·앱 코드에는 없음)
@@ -35,6 +44,7 @@
  *  가족미술관_작품원본/
  *    2026/
  *      1실_1~3월/  2026-03-02_아이1_무지개마을.jpg
+ *      1실_1~3월/  2026-03-02_아이1_무지개마을_2.jpg   ← 한 작품에 사진이 여러 장이면 뒤에 번호
  *      2실_4~6월/  …
  *  → 시트의 driveFileId 로 원본을 찾고, 필요하면 이 폴더에서 통째로 내려받으면 됩니다.
  *
@@ -46,6 +56,9 @@
  *                                        목록 전체 저장(시트를 이 내용으로 교체)
  *  POST {action:'upload', image:'data:image/jpeg;base64,…', date, year, room, artist, title}
  *                                        원본 사진을 드라이브에 저장 → { fileId, url, thumbUrl }
+ *  POST {action:'upload', images:['data:…','data:…'], date, year, room, artist, title}
+ *                                        사진 여러 장을 한 번에(최대 10장) → { files:[{fileId,url,thumbUrl}, …]
+ *                                        옛 앱(v1.0.0)이 보내는 image 한 장도 그대로 받습니다.
  *
  * ── 안전장치 ────────────────────────────────────────────────────────
  *  · 저장 요청이 비어 있는데 시트에 기록이 있으면, 기존 기록을 지우지 않고 거부합니다.
@@ -68,14 +81,15 @@
  *  웹 앱에서 시트를 찾지 못한다는 오류가 나면, 시트 주소의 /d/<ID>/ 부분을 여기에 넣고 다시 배포하세요. */
 var SHEET_ID = '';
 
-var BACKEND_VERSION = '1.0.0';
+var BACKEND_VERSION = '1.1.0';
 var ROOT_NAME = '가족미술관_작품원본';
 var SHARE_ARTWORK = true;
 var MAX_IMAGE_BYTES = 12 * 1024 * 1024;
+var MAX_PHOTOS = 10;            // 한 작품에 담는 사진 수 상한 (앱과 같음)
 
 var TABS = { works: '작품목록', settings: '설정' };
 var HEAD = ['id', 'date', 'year', 'room', 'artist', 'title', 'memo',
-            'driveFileId', 'driveUrl', 'thumbUrl', 'createdAt', 'updatedAt'];
+            'driveFileId', 'driveUrl', 'thumbUrl', 'createdAt', 'updatedAt', 'photos'];
 var SETTING_KEYS = ['museumTitle', 'artist1', 'artist2', 'dadName', 'momName', 'kid1Name', 'kid2Name'];
 var ROOM_LABEL = { 1: '1실_1~3월', 2: '2실_4~6월', 3: '3실_7~9월', 4: '4실_10~12월' };
 var ARTIST_KEY = { a1: '아이1', a2: '아이2' };
@@ -107,7 +121,7 @@ function doPost(e) {
   try {
     var action = req.action || 'ping';
     if (action === 'save') return out_(saveAll_(req));
-    if (action === 'upload') return out_(uploadImage_(req));
+    if (action === 'upload') return out_(uploadImages_(req));
     if (action === 'load') return out_(loadAll_());
     return out_({ ok: true, app: 'kidsgallery', version: BACKEND_VERSION });
   } catch (err) {
@@ -153,6 +167,17 @@ function ensureHeader_(sh, headers) {
     sh.getRange(1, 1, 1, headers.length).setValues([headers]);
     sh.getRange(1, 1, 1, headers.length).setFontWeight('bold');
     sh.setFrozenRows(1);
+    return sh;
+  }
+  // 예전 시트(12열)에 새 열(photos)이 없으면 머리글만 덧붙입니다.
+  // 사용자가 직접 적어 둔 머리글은 건드리지 않습니다.
+  var changed = false;
+  for (var j = 0; j < headers.length; j++) {
+    if (!String(first[j] == null ? '' : first[j]).trim()) { first[j] = headers[j]; changed = true; }
+  }
+  if (changed) {
+    sh.getRange(1, 1, 1, first.length).setValues([first]);
+    sh.getRange(1, 1, 1, first.length).setFontWeight('bold');
   }
   return sh;
 }
@@ -206,7 +231,8 @@ function readWorks_(ss) {
       driveUrl: String(r[8] == null ? '' : r[8]),
       thumbUrl: String(r[9] == null ? '' : r[9]),
       createdAt: String(r[10] == null ? '' : r[10]),
-      updatedAt: String(r[11] == null ? '' : r[11])
+      updatedAt: String(r[11] == null ? '' : r[11]),
+      photos: photosList_(r[12])
     });
   }
   out.sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
@@ -260,7 +286,8 @@ function saveAll_(req) {
         str_(a.title) || str_(p[5]), str_(a.memo) || str_(p[6]),
         driveFileId, driveUrl, thumbUrl,
         str_(a.createdAt) || str_(p[10]) || now,
-        str_(a.updatedAt) || now
+        str_(a.updatedAt) || now,
+        photosJson_(a.photos, p[12])
       ]);
     }
 
@@ -314,9 +341,9 @@ function writeSettings_(ss, s) {
 
 /* ------------------------------------------------------------------ 사진 저장 */
 
-function uploadImage_(req) {
-  var dataUrl = String(req.image || '');
-  var m = dataUrl.match(/^data:image\/(jpeg|jpg|png|webp);base64,([\s\S]+)$/i);
+/** 이미지 dataURL 하나를 드라이브에 저장합니다. */
+function uploadOne_(dataUrl, req, index, total) {
+  var m = String(dataUrl || '').match(/^data:image\/(jpeg|jpg|png|webp);base64,([\s\S]+)$/i);
   if (!m) return { ok: false, error: '이미지 데이터 형식이 올바르지 않습니다.' };
 
   var bytes = Utilities.base64Decode(m[2]);
@@ -332,7 +359,9 @@ function uploadImage_(req) {
 
   var folder = folderFor_(year, room);
   var ext = m[1].toLowerCase() === 'png' ? 'png' : (m[1].toLowerCase() === 'webp' ? 'webp' : 'jpg');
-  var name = date + '_' + ARTIST_KEY[artist] + '_' + safeName_(req.title || '작품') + '.' + ext;
+  // 한 작품에 사진이 여러 장이면 뒤에 _2, _3 … 을 붙여 같은 폴더 안에서도 구분됩니다.
+  var suffix = (total > 1 && index > 1) ? ('_' + index) : '';
+  var name = date + '_' + ARTIST_KEY[artist] + '_' + safeName_(req.title || '작품') + suffix + '.' + ext;
 
   var blob = Utilities.newBlob(bytes, 'image/' + (ext === 'jpg' ? 'jpeg' : ext), name);
   var file = folder.createFile(blob);
@@ -348,6 +377,94 @@ function uploadImage_(req) {
     url: 'https://drive.google.com/file/d/' + id + '/view',
     thumbUrl: 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1200'
   };
+}
+
+/** image 한 장 또는 images 여러 장을 받아 모두 드라이브에 저장합니다. */
+function uploadImages_(req) {
+  var list = [];
+  if (Array.isArray(req.images) && req.images.length) list = req.images;
+  else if (req.image) list = [req.image];
+  if (!list.length) return { ok: false, error: '이미지 데이터가 없습니다.' };
+  if (list.length > MAX_PHOTOS) {
+    return { ok: false, error: '사진은 한 번에 최대 ' + MAX_PHOTOS + '장까지 저장합니다.' };
+  }
+
+  var files = [], errors = [];
+  for (var i = 0; i < list.length; i++) {
+    var r = uploadOne_(list[i], req, i + 1, list.length);
+    if (r.ok) files.push(r); else errors.push(r.error);
+  }
+  if (!files.length) {
+    return { ok: false, error: errors.join(' / ') || '사진을 저장하지 못했습니다.', files: [] };
+  }
+  // 옛 앱(v1.0.0)은 fileId·url·thumbUrl 한 벌만 읽으므로 첫 장 값을 그대로 같이 돌립니다.
+  var first = files[0];
+  return {
+    ok: true,
+    files: files,
+    fileId: first.fileId,
+    name: first.name,
+    folder: first.folder,
+    url: first.url,
+    thumbUrl: first.thumbUrl,
+    errors: errors
+  };
+}
+
+/* 시트 photos 열(JSON 문자열) → 배열 */
+function photosList_(v) {
+  var s = str_(v).trim();
+  if (!s) return [];
+  var arr;
+  try { arr = JSON.parse(s); } catch (e) { return []; }
+  if (!Array.isArray(arr)) return [];
+  var out = [];
+  for (var i = 0; i < arr.length && out.length < MAX_PHOTOS; i++) {
+    var p = arr[i] || {};
+    var o = {
+      id: str_(p.id) || ('p' + (out.length + 1)),
+      fileId: str_(p.fileId) || str_(p.driveFileId),
+      url: str_(p.url) || str_(p.driveUrl),
+      thumbUrl: str_(p.thumbUrl) || str_(p.driveThumb),
+      w: Number(p.w) || 0,
+      h: Number(p.h) || 0,
+      rot: Number(p.rot) || 0
+    };
+    var thumb = str_(p.thumb);
+    if (!o.fileId && !o.thumbUrl && thumb) o.thumb = thumb;   // 아직 드라이브에 없는 사진만 작은 미리보기
+    if (!o.fileId && !o.thumbUrl && !o.thumb) continue;
+    out.push(o);
+  }
+  return out;
+}
+
+/* 배열(또는 JSON 문자열) → 시트에 넣을 JSON 문자열 */
+function photosJson_(v, prev) {
+  var arr = v;
+  if (typeof v === 'string') {
+    try { arr = JSON.parse(v); } catch (e) { arr = null; }
+  }
+  if (!Array.isArray(arr) || !arr.length) return str_(prev);
+  var out = [];
+  for (var i = 0; i < arr.length && out.length < MAX_PHOTOS; i++) {
+    var p = arr[i] || {};
+    var fileId = str_(p.fileId || p.driveFileId);
+    var thumbUrl = str_(p.thumbUrl || p.driveThumb);
+    var thumb = str_(p.thumb);
+    if (!fileId && !thumbUrl && !thumb) continue;
+    var o = {
+      id: str_(p.id) || ('p' + (out.length + 1)),
+      fileId: fileId,
+      url: str_(p.url || p.driveUrl),
+      thumbUrl: thumbUrl
+    };
+    if (!fileId && !thumbUrl && thumb && thumb.length <= 60000) o.thumb = thumb;
+    if (Number(p.w)) o.w = Number(p.w);
+    if (Number(p.h)) o.h = Number(p.h);
+    if (Number(p.rot)) o.rot = Number(p.rot);
+    out.push(o);
+  }
+  return out.length ? JSON.stringify(out) : str_(prev);
 }
 
 function folderFor_(year, room) {
@@ -397,6 +514,7 @@ function str_(v) { return v == null ? '' : String(v); }
 /** 시트에 두 탭을 미리 만들고 싶을 때 편집기에서 한 번 실행하세요. */
 function setupSheets() {
   tab_(TABS.works, HEAD);
+  ensureHeader_(tab_(TABS.works, HEAD), HEAD);
   tab_(TABS.settings, ['항목', '값', '비고']);
   var sh = ss_().getSheetByName(TABS.settings);
   if (sh.getLastRow() < 2) {

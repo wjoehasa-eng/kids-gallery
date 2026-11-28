@@ -164,7 +164,10 @@
   .roomstrip::-webkit-scrollbar{display:none}
   .roomstrip .rc{flex:0 0 auto;width:74px;border:0;background:var(--panel);border-radius:12px;padding:3px 3px 4px;
     box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.7);text-align:left}
-  .roomstrip .rc img,.roomstrip .rc .ph{width:100%;height:50px;border-radius:9px;display:block;object-fit:cover;background:#F4EAE0}
+  .roomstrip .rc .sh{position:relative;display:block}
+  .roomstrip .rc .sh img,.roomstrip .rc .sh .ph{width:100%;height:50px;border-radius:9px;display:block;object-fit:cover;background:#F4EAE0}
+  .roomstrip .rc .n{position:absolute;right:3px;top:3px;background:rgba(47,39,33,.8);color:#FFF8F1;font-size:9px;
+    font-weight:800;padding:1px 5px;border-radius:8px;pointer-events:none}
   .ph{position:relative;background:linear-gradient(160deg,#F8E9DA,#EED9C6)}
   .ph::after{content:"";position:absolute;inset:0;margin:auto;width:15px;height:13px;border-radius:3px;
     border:2px solid rgba(186,146,116,.5);box-shadow:0 0 0 2px rgba(255,255,255,.35) inset}
@@ -219,8 +222,31 @@
   .drop b{font-size:13px;font-weight:700}
   .drop span{font-size:11px;color:var(--ink2)}
   .drop img{display:block;width:100%;max-height:280px;object-fit:contain;background:#F7EFE6}
-  .drop.hasimg .in{display:none}
-  .drop:not(.hasimg) img{display:none}
+
+  /* 작품 사진 여러 장 — 등록/수정 창의 사진 타일 (첫 장이 액자 대표) */
+  .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+  .photos:empty{display:none}
+  .ptile{position:relative;border-radius:12px;overflow:hidden;background:#F4EAE0;aspect-ratio:1/1;
+    border:1.5px solid rgba(180,140,110,.26);box-shadow:0 2px 8px rgba(96,64,44,.08)}
+  .ptile > img{display:block;width:100%;height:100%;object-fit:contain;background:#FBF2E8;cursor:pointer}
+  .ptile .ptag{position:absolute;left:4px;top:4px;background:rgba(168,95,69,.94);color:#fff;font-size:9.5px;
+    font-weight:800;padding:2px 6px;border-radius:8px;letter-spacing:.01em;pointer-events:none}
+  .ptile .pdel{position:absolute;right:4px;top:4px;width:25px;height:25px;border-radius:50%;border:0;
+    background:rgba(255,255,255,.95);color:#B4462E;font-size:12px;line-height:1;display:grid;place-items:center;
+    box-shadow:0 1px 5px rgba(60,40,25,.28)}
+  .ptile .pbtns{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:3px;padding:3px;
+    background:linear-gradient(rgba(30,20,14,0),rgba(30,20,14,.5))}
+  .ptile .pbtns button{width:27px;height:27px;border-radius:50%;border:0;background:rgba(255,255,255,.95);
+    color:#5B4638;font-size:13px;line-height:1;display:grid;place-items:center;box-shadow:0 1px 4px rgba(60,40,25,.25)}
+  .ptile .pbtns button:active{transform:scale(.92)}
+  .ptile .pwait{position:absolute;inset:0;display:grid;place-items:center;background:rgba(255,252,247,.72);
+    font-size:10.5px;font-weight:700;color:#8A7466;pointer-events:none}
+  .photoline{display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:600;color:var(--ink3)}
+  .photoline .cnt{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:800;color:#8A7466}
+  .drop.mini .in{padding:9px 12px;flex-direction:row;gap:8px;justify-content:center}
+  .drop.mini .ico{width:26px;height:26px;font-size:15px;margin:0;border-radius:9px}
+  .drop.mini b{font-size:12.5px}
+  .drop.mini span{display:none}
 
   /* 작품 크게 보기 */
   .sheet.art{padding:0;display:flex;flex-direction:column;width:min(760px,100%)}
@@ -249,6 +275,27 @@
   .artacts{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap}
   .artacts .btn{padding:10px 14px;font-size:13px}
   .artacts .spacer{flex:1}
+  /* 사진이 여러 장일 때 — 사진 넘기기 · 썸네일 줄 */
+  .photolar{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;align-items:center;gap:1px;
+    background:rgba(255,255,255,.96);border-radius:24px;box-shadow:0 8px 22px rgba(70,45,28,.24);padding:3px 4px;z-index:2}
+  .photolar button{width:42px;height:42px;border:0;background:transparent;border-radius:50%;color:#5B4638;
+    font-size:23px;line-height:1;display:grid;place-items:center}
+  .photolar button:active{background:#F6E9DE}
+  .photolar button[disabled]{opacity:.26}
+  .photolar span{min-width:46px;text-align:center;font-size:13px;font-weight:800;color:#6B564A;font-variant-numeric:tabular-nums}
+  .artthumbs{display:flex;gap:7px;overflow-x:auto;padding:9px 16px;background:#F6EDE3;scrollbar-width:none}
+  .artthumbs::-webkit-scrollbar{display:none}
+  .artthumbs button{flex:0 0 auto;width:58px;height:58px;border-radius:11px;overflow:hidden;padding:0;
+    border:2px solid transparent;background:#FFFDFA}
+  .artthumbs button.on{border-color:#A85F45;box-shadow:0 3px 10px rgba(150,70,44,.25)}
+  .artthumbs img{display:block;width:100%;height:100%;object-fit:cover}
+  .pcount{display:inline-flex;align-items:center;gap:3px;background:#FFF3E8;color:#96503A;border-radius:20px;
+    padding:4px 10px;font-size:12px;font-weight:800}
+  /* 픽셀에 회전을 새기지 못한 사진은 보여 줄 때만 돌립니다 */
+  .artview img.rot90{transform:rotate(90deg);max-width:min(100%,52vh)}
+  .artview img.rot180{transform:rotate(180deg)}
+  .artview img.rot270{transform:rotate(270deg);max-width:min(100%,52vh)}
+  .acard .shot img.rot90,.acard .shot img.rot270{transform:rotate(90deg)}
 
   /* 작품 목록 */
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;padding:4px 18px 18px}
@@ -289,6 +336,19 @@
   .acard .tx .meta{font-size:14px;font-weight:700;color:#775C4B;line-height:1.4}
   .acard .tx .memo{font-size:15px;line-height:1.5;color:#463A31;font-weight:500}
   .album-empty{padding:48px 16px;text-align:center;color:#6B564A;font-size:15.5px;line-height:1.7}
+  /* 앨범 카드 — 여러 장 표시 · 카드에서 바로 넘겨 보기 */
+  .album-grid{align-items:start}
+  .acell{display:flex;flex-direction:column;min-width:0}
+  .acard .shot{position:relative}
+  .acard .pbadge{position:absolute;right:12px;top:12px;background:rgba(47,39,33,.78);color:#FFF8F1;
+    font-size:12px;font-weight:800;padding:3px 9px;border-radius:14px;pointer-events:none}
+  .acell .mn{margin:-9px auto 0;display:flex;align-items:center;gap:1px;background:#fff;
+    border:1px solid rgba(84,58,40,.10);border-radius:22px;padding:2px 5px;box-shadow:0 5px 14px rgba(96,64,44,.14);z-index:2}
+  .acell .mn[hidden]{display:none}
+  .acell .mn button{width:38px;height:38px;border:0;background:transparent;border-radius:50%;color:#5B4638;
+    font-size:21px;line-height:1;display:grid;place-items:center}
+  .acell .mn button:active{background:#F6E9DE}
+  .acell .mn span{min-width:44px;text-align:center;font-size:13px;font-weight:800;color:#6B564A;font-variant-numeric:tabular-nums}
 
   /* 공유 */
   .linkcard{display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;border:1px solid var(--line);
@@ -345,6 +405,14 @@
     .artinfo p{font-size:15px}
     .artpager button{min-height:54px;font-size:16.5px}
     .artnav button{width:50px;height:50px}
+    .photolar{bottom:8px;padding:3px}
+    .photolar button{width:44px;height:44px;font-size:24px}
+    .artthumbs{padding:8px 12px}
+    .artthumbs button{width:54px;height:54px}
+    .photos{grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:7px}
+    .ptile .pbtns button{width:26px;height:26px}
+    .acell .mn button{width:40px;height:40px;font-size:22px}
+    .acell .mn span{min-width:46px;font-size:13.5px}
     .album{padding:4px 2px 22px}
     .album-head{padding:8px 6px}
     .album-head h2{font-size:17.5px}
@@ -454,15 +522,19 @@
   <div class="sheet">
     <div class="sheet-head"><h2 id="upTitle">작품 올리기</h2><button class="x" data-close aria-label="닫기">✕</button></div>
     <div class="sheet-body">
-      <label class="drop" id="drop">
-        <input type="file" id="fileInput" accept="image/*" hidden />
-        <div class="in">
-          <div class="ico">＋</div>
-          <b>작품 사진을 고르거나 찍어 주세요</b>
-          <span>핸드폰에서는 카메라로 바로 찍을 수 있어요</span>
-        </div>
-        <img id="preview" alt="선택한 작품 사진" />
-      </label>
+      <div class="field">
+        <span>작품 사진 <em style="font-style:normal;opacity:.6;font-weight:500">(첫 번째 사진이 액자에 걸려요)</em></span>
+        <div class="photos" id="upPhotos"></div>
+        <label class="drop" id="drop">
+          <input type="file" id="fileInput" accept="image/*" multiple hidden />
+          <div class="in">
+            <div class="ico">＋</div>
+            <b>작품 사진을 고르거나 찍어 주세요</b>
+            <span>여러 장을 한 번에 고를 수 있어요 · 최대 10장</span>
+          </div>
+        </label>
+        <div class="photoline"><span>사진마다 ↺ ↻ 로 돌리고 ✕ 로 뺄 수 있어요</span><span class="cnt" id="upPhotoCount">0 / 10</span></div>
+      </div>
       <div class="row2">
         <label class="field"><span>전시 날짜</span><input type="date" id="fDate" /></label>
         <div class="field"><span>작가</span><div class="pick" id="artistPick">
@@ -486,12 +558,18 @@
 <div class="modal" id="mArt" role="dialog" aria-modal="true" aria-label="작품 보기">
   <div class="sheet art">
     <button class="x floating" data-close aria-label="닫기">✕</button>
-    <div class="artview">
+    <div class="artview" id="artView">
       <img id="artImg" alt="" />
       <div class="artnav"><button id="artPrev" aria-label="이전 작품">‹</button><button id="artNext" aria-label="다음 작품">›</button></div>
+      <div class="photolar" id="artPhotoBar" hidden>
+        <button id="photoPrev" aria-label="앞 사진">‹</button>
+        <span id="photoPos">1 / 3</span>
+        <button id="photoNext" aria-label="다음 사진">›</button>
+      </div>
     </div>
+    <div class="artthumbs" id="artThumbs" hidden></div>
     <div class="artinfo">
-      <div class="artmeta"><span class="chip" id="artArtist"></span><span id="artDate"></span><span class="artpos" id="artPos"></span></div>
+      <div class="artmeta"><span class="chip" id="artArtist"></span><span class="pcount" id="artPhotoCount" hidden></span><span id="artDate"></span><span class="artpos" id="artPos"></span></div>
       <h2 id="artTitle"></h2>
       <p id="artMemo"></p>
       <div class="artpager">
@@ -605,9 +683,10 @@
 
 <script>
 /* ══════════════════════════════════════════════════════════════════════
-   가족 미술관 (kids-gallery) v2.1.0
+   가족 미술관 (kids-gallery) v2.2.0
    2.5D 아이소메트릭 전시실(한 방 26칸, 4실 테마) · 층(연도)/방(분기)/관 · 작가 필터 · 관람 전용
    큰 사진 앨범(어른용) · 캐릭터 없이 큰 카드로 보는 화면
+   사진 90° 회전(실제 픽셀 저장) · 한 액자에 사진 여러 장(최대 10장, 첫 장이 대표)
    개인정보 원칙: 코드·데모·테스트에는 실명/기관명/연락처/실제 시트 주소 없음.
    실제 이름은 연결된 비공개 시트의 「설정」 탭에서 불러옵니다.
    ══════════════════════════════════════════════════════════════════════ */
@@ -615,12 +694,14 @@
 'use strict';
 
 /* ─────────────────────────── 0. 상수 ─────────────────────────── */
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.2.0';
 const LS_KEY = 'kids-gallery.v1';
 const LS_PREFS = 'kids-gallery.prefs';
 const THUMB_MAX_SIDE = 520;
 const THUMB_QUALITY = 0.7;
 const LOCAL_THUMB_LIMIT = 70;
+const LOCAL_PHOTO_THUMB_LIMIT = 40;   // 기기에 들고 있는 사진 미리보기 장수 상한(저장 공간 보호)
+const MAX_PHOTOS = 10;                // 한 액자(작품)에 담을 수 있는 사진 수
 
 const DEFAULT_SETTINGS = {
   museumTitle: '우리 가족 미술관',
@@ -862,6 +943,7 @@ const S = {
   character: 'dad',
   view: { year: BASE_YEAR, room: 1, artist: 'all', hall: 1 },
   sheetUrl: '',
+  backendVersion: '',
   mode: 'edit',
   demo: false,
   extraYears: [],
@@ -878,7 +960,7 @@ function loadLocal() {
       const o = JSON.parse(raw);
       if (o && typeof o === 'object') {
         if (o.settings) S.settings = Object.assign({}, DEFAULT_SETTINGS, o.settings);
-        if (Array.isArray(o.artworks)) S.artworks = o.artworks.filter(a => a && a.id && a.date);
+        if (Array.isArray(o.artworks)) S.artworks = o.artworks.filter(a => a && a.id && a.date).map(a => { ensurePhotos(a); return a; });
         if (o.character && PEOPLE[o.character]) S.character = o.character;
         if (o.sheetUrl) S.sheetUrl = o.sheetUrl;
         if (Array.isArray(o.extraYears)) S.extraYears = o.extraYears.map(y => parseInt(y, 10)).filter(y => !isNaN(y));
@@ -896,7 +978,22 @@ function savePrefs() { try { localStorage.setItem(LS_PREFS, JSON.stringify(prefs
 function pruneThumbs(list) {
   // 기기에 들고 있는 미리보기 사진은 최근 것만 남깁니다(원본은 드라이브에 있음).
   const arr = (list || S.artworks).slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
-  arr.slice(LOCAL_THUMB_LIMIT).forEach(a => { a.thumb = ''; });
+  let budget = LOCAL_PHOTO_THUMB_LIMIT;
+  arr.forEach((a, i) => {
+    const ps = (a.photos || []);
+    if (i >= LOCAL_THUMB_LIMIT) {
+      ps.forEach(p => { p.thumb = ''; });
+      a.thumb = '';
+      return;
+    }
+    ps.forEach(p => {
+      if (!p.thumb) return;
+      if (budget > 0) { budget--; return; }
+      if (p.thumbUrl || p.fileId) p.thumb = '';   // 드라이브에 있는 사진만 미리보기를 놓아 줍니다
+    });
+    if (ps[0] && (ps[0].thumbUrl || ps[0].fileId)) a.thumb = ps[0].thumb || '';
+    else if (ps[0]) a.thumb = ps[0].thumb || a.thumb;
+  });
 }
 function saveLocal() {
   if (S.mode === 'view') return;      // 관람 전용에서는 기기 데이터를 건드리지 않습니다.
@@ -911,7 +1008,11 @@ function saveLocal() {
   } catch (e) {
     // 용량이 찼으면 미리보기 사진부터 줄여 다시 시도합니다.
     pruneThumbs(real);
-    real.forEach((a, i) => { if (i % 2) a.thumb = ''; });
+    real.forEach(a => {
+      const ps = (a.photos || []);
+      ps.forEach(p => { if (p.thumbUrl || p.fileId) p.thumb = ''; });
+      if (a.driveThumb || a.driveFileId) a.thumb = '';
+    });
     try { localStorage.setItem(LS_KEY, JSON.stringify(payload)); } catch (e2) {
       setSync('err', '이 기기 저장 공간 부족');
       toast('기기 저장 공간이 부족해 미리보기 사진을 줄였어요');
@@ -1034,23 +1135,127 @@ function fileToImage(file) {
   });
 }
 function resizeDataURL(img, maxSide, quality, maxChars) {
+  return renderRotated(img, 0, maxSide, quality, maxChars).url;
+}
+
+/* ── 사진 여러 장 · 90° 회전 ─────────────────────────────────────
+   작품 하나에 사진을 최대 10장까지 담습니다. 첫 사진이 액자에 걸리는 대표 사진입니다.
+   회전은 실제 픽셀을 돌려 새 JPEG로 만들어 저장합니다(기기에서 고른 사진·드라이브 사진).
+   부득이하게 픽셀을 읽을 수 없는 외부 사진만 rot 값만 남겨 보여 줄 때 돌립니다. */
+function normRot(v) {
+  let r = parseInt(v, 10);
+  if (isNaN(r)) r = 0;
+  r = ((r % 360) + 360) % 360;
+  return r % 90 ? 0 : r;
+}
+function normPhoto(p, i) {
+  p = p || {};
+  return {
+    id: String(p.id || p.key || ('p' + ((i || 0) + 1))),
+    fileId: String(p.fileId || p.driveFileId || ''),
+    url: String(p.url || p.driveUrl || ''),
+    thumbUrl: String(p.thumbUrl || p.driveThumb || ''),
+    thumb: typeof p.thumb === 'string' ? p.thumb : '',
+    w: +p.w || 0, h: +p.h || 0,
+    rot: normRot(p.rot)
+  };
+}
+function parsePhotos(v) {
+  let arr = v;
+  if (typeof v === 'string') {
+    const s = v.trim();
+    if (!s) return null;
+    try { arr = JSON.parse(s); } catch (e) { return null; }
+  }
+  if (!Array.isArray(arr)) return null;
+  const out = arr.map(normPhoto).filter(p => p.thumb || p.thumbUrl || p.fileId || p.url);
+  return out.length ? out : null;
+}
+/* 예전 기록(사진 1장 필드)을 photos 배열로 옮겨 담습니다. */
+function ensurePhotos(a) {
+  if (!a) return [];
+  let ps = parsePhotos(a.photos);
+  if (!ps) {
+    ps = (a.thumb || a.driveThumb || a.driveFileId || a.driveUrl)
+      ? [normPhoto({ id: 'p1', driveFileId: a.driveFileId, driveUrl: a.driveUrl, driveThumb: a.driveThumb, thumb: a.thumb, w: a.photoW, h: a.photoH }, 0)]
+      : [];
+  }
+  a.photos = ps;
+  return ps;
+}
+/* photos[0] 을 예전 필드(driveFileId·driveUrl·driveThumb·thumb)에도 그대로 채워
+   v1.0.0 시트·옛 백업과도 호환되게 합니다. */
+function syncPrimary(a) {
+  if (!a) return;
+  const p = (a.photos && a.photos[0]) || null;
+  a.thumb = (p && p.thumb) || '';
+  a.driveFileId = (p && p.fileId) || '';
+  a.driveUrl = (p && p.url) || '';
+  a.driveThumb = (p && p.thumbUrl) || '';
+  a.photoW = (p && p.w) || 0;
+  a.photoH = (p && p.h) || 0;
+}
+function photoCount(a) { return (a && a.photos && a.photos.length) || 0; }
+function firstPhoto(a) { return (a && a.photos && a.photos[0]) || null; }
+/* 사진 한 장의 주소 후보 — 드라이브 원본(큰 사진)부터 기기 미리보기까지 */
+function photoChain(p, big) {
+  const out = [];
+  if (!p) return out;
+  if (p.fileId) out.push('https://lh3.googleusercontent.com/d/' + p.fileId + '=' + (big ? 'w1600' : 'w1200'));
+  if (p.thumbUrl && out.indexOf(p.thumbUrl) < 0) out.push(p.thumbUrl);
+  if (p.thumb && out.indexOf(p.thumb) < 0) out.push(p.thumb);
+  return out;
+}
+function photoSrc(p, big) { const c = photoChain(p, big); return c.length ? c[0] : ''; }
+/* 사진을 돌렸을 때의 화면 크기(가로·세로 감빛기) */
+function rotatedSize(img, rot) {
+  const r = normRot(rot), swap = r % 180 !== 0;
+  const ow = (img && (img.naturalWidth || img.width)) || 1;
+  const oh = (img && (img.naturalHeight || img.height)) || 1;
+  return swap ? { w: oh, h: ow } : { w: ow, h: oh };
+}
+/* 회전을 실제 픽셀에 새긴 JPEG dataURL 을 만듭니다. */
+function renderRotated(img, rot, maxSide, quality, maxChars) {
+  const r = normRot(rot), swap = r % 180 !== 0;
+  const sz = rotatedSize(img, r);
   let side = maxSide, q = quality;
   for (let i = 0; i < 6; i++) {
-    const r = Math.min(1, side / Math.max(img.width, img.height));
-    const w = Math.max(1, Math.round(img.width * r));
-    const h = Math.max(1, Math.round(img.height * r));
+    const k = Math.min(1, side / Math.max(sz.w, sz.h));
+    const w = Math.max(1, Math.round(sz.w * k)), h = Math.max(1, Math.round(sz.h * k));
     const c = document.createElement('canvas');
     c.width = w; c.height = h;
     const g = c.getContext('2d');
     g.imageSmoothingQuality = 'high';
     g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);
-    g.drawImage(img, 0, 0, w, h);
-    const out = c.toDataURL('image/jpeg', q);
-    if (!maxChars || out.length <= maxChars) return out;
+    g.save();
+    g.translate(w / 2, h / 2);
+    if (r) g.rotate(r * Math.PI / 180);
+    const dw = swap ? h : w, dh = swap ? w : h;
+    g.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+    g.restore();
+    let out = '';
+    try { out = c.toDataURL('image/jpeg', q); } catch (e) { return { url: '', w: w, h: h, blocked: true }; }
+    if (!maxChars || out.length <= maxChars) return { url: out, w: w, h: h, blocked: false };
     side = Math.round(side * 0.82);
     q = Math.max(0.5, q - 0.04);
   }
-  return '';
+  return { url: '', w: 0, h: 0, blocked: false };
+}
+function bakePhoto(img, rot) {
+  const thumb = renderRotated(img, rot, THUMB_MAX_SIDE, THUMB_QUALITY, 48000);
+  const full = renderRotated(img, rot, 1600, 0.86, 900000);
+  return {
+    thumb: thumb.url, full: full.url,
+    w: full.w || thumb.w || 0, h: full.h || thumb.h || 0,
+    blocked: !!(thumb.blocked || full.blocked)
+  };
+}
+/* 기기에 남은 원본(아직 드라이브로 못 보낸 사진)은 사진마다 따로 보관합니다. */
+function pendingKey(artId, photoId) { return String(artId) + '#' + String(photoId || 'p1'); }
+function splitKey(k) {
+  const s = String(k || '');
+  const i = s.indexOf('#');
+  return i < 0 ? { artId: s, photoId: '' } : { artId: s.slice(0, i), photoId: s.slice(i + 1) };
 }
 
 /* ─────────────────────────── 6. 화면 계산 ─────────────────────────── */
@@ -1061,6 +1266,7 @@ const cam = { a: 32, b: 16, zh: 30, ox: 0, oy: 0, scale: 1 };
 const char = { x: 4.6, y: 5.4, path: [], moving: false, phase: 0, facing: 1, speed: 3.6 };
 const anim = { fade: 0 };
 let hits = [];
+let lastBadges = [];   // 여러 장 액자의 +N 배지 위치 (검증·디바깅용 읽기 전용)
 let dirty = true;
 
 function proj(x, y, z) {
@@ -1110,15 +1316,31 @@ function padPoly(poly, pad) {
     return { x: p.x + dx / d * pad, y: p.y + dy / d * pad };
   });
 }
-function drawImageQuad(img, q) {
+function drawImageQuad(img, q, rot) {
   const TL = q[0], TR = q[1], BL = q[3];
-  const m0 = (TR.x - TL.x) / 100, m1 = (TR.y - TL.y) / 100;
-  const m2 = (BL.x - TL.x) / 100, m3 = (BL.y - TL.y) / 100;
+  const m0 = (TR.x - TL.x) / 100, m1 = (TR.y - TL.y) / 100;   // 사진의 가로축
+  const m2 = (BL.x - TL.x) / 100, m3 = (BL.y - TL.y) / 100;   // 사진의 세로축
+  const r = normRot(rot);
+  let a0 = m0, a1 = m1, b0 = m2, b1 = m3, ox = TL.x, oy = TL.y;
+  if (r === 90) {          // 오른쪽으로 90° — 사진의 와이쪽 축이 위로
+    a0 = m2; a1 = m3; b0 = -m0; b1 = -m1; ox = TL.x + 100 * m0; oy = TL.y + 100 * m1;
+  } else if (r === 180) {
+    a0 = -m0; a1 = -m1; b0 = -m2; b1 = -m3; ox = TL.x + 100 * (m0 + m2); oy = TL.y + 100 * (m1 + m3);
+  } else if (r === 270) {  // 왼쪽으로 90°
+    a0 = -m2; a1 = -m3; b0 = m0; b1 = m1; ox = TL.x + 100 * m2; oy = TL.y + 100 * m3;
+  }
   ctx.save();
-  ctx.setTransform(m0 * DPR, m1 * DPR, m2 * DPR, m3 * DPR, TL.x * DPR, TL.y * DPR);
+  ctx.setTransform(a0 * DPR, a1 * DPR, b0 * DPR, b1 * DPR, ox * DPR, oy * DPR);
   ctx.imageSmoothingQuality = 'high';
   try { ctx.drawImage(img, 0, 0, 100, 100); } catch (e) {}
   ctx.restore();
+}
+/* 사진의 보이는 가로·세로 비 — 저장해 둔 크기가 있으면 그걸, 없으면 그림에서 */
+function photoDims(img, ph, rot) {
+  let w = (ph && ph.w) || 0, h = (ph && ph.h) || 0;
+  if (!w || !h) { w = (img && (img.naturalWidth || img.width)) || 4; h = (img && (img.naturalHeight || img.height)) || 3; }
+  if (normRot(rot) % 180 !== 0) { const t = w; w = h; h = t; }
+  return { w: w, h: h };
 }
 
 /* 슬롯 배치 — 방 하나에 26칸
@@ -1489,13 +1711,16 @@ function drawFrame(slot, art) {
 
   if (art) {
     const img = imgFor(art);
+    const ph = firstPhoto(art);
+    const r = normRot(ph && ph.rot);
     if (img) {
       const fw = slot.w - pad * 2, fh = slot.h - pad * 2;
-      const asp = (img.width || 4) / (img.height || 3);
+      const sz = photoDims(img, ph, r);
+      const asp = sz.w / sz.h;
       let du = fw, dv = fw / asp;
       if (dv > fh) { dv = fh; du = fh * asp; }
       const iq = wallQuad(slot.plane, slot.u - du / 2, slot.u + du / 2, slot.z - dv / 2, slot.z + dv / 2);
-      drawImageQuad(img, iq);
+      drawImageQuad(img, iq, r);
     } else {
       // 사진을 불러오는 동안 / 주소가 없을 때 — 빈 액자 느낌의 작은 그림 표시
       const c = planePoint(slot.plane, slot.u, slot.z);
@@ -1524,7 +1749,36 @@ function drawFrame(slot, art) {
   if (art) {
     const c = polyCenter(q);
     hits.push({ id: art.id, poly: q, pad: padPoly(q, HIT_PAD), cx: c.x, cy: c.y });
+    const extra = photoCount(art) - 1;
+    if (extra > 0) drawPhotoBadge(q, extra);
   }
+}
+
+/* 여러 장이 든 액자 — 오른쪽 아래 모서리에 +N 배지 */
+function drawPhotoBadge(q, extra) {
+  const c = polyCenter(q);
+  const bx = c.x + (q[2].x - c.x) * 0.74;
+  const by = c.y + (q[2].y - c.y) * 0.74;
+  const fw = Math.hypot(q[1].x - q[0].x, q[1].y - q[0].y);
+  if (fw < 26) return;
+  const fs = clamp(9, fw * 0.15, 13);
+  const label = '+' + extra;
+  ctx.save();
+  ctx.font = '800 ' + fs.toFixed(1) + "px 'Pretendard',system-ui,sans-serif";
+  const tw = ctx.measureText(label).width;
+  const h = fs + 7;
+  lastBadges.push({ extra: extra, x: +bx.toFixed(1), y: +by.toFixed(1), w: +(tw + 12).toFixed(1), h: +h.toFixed(1) });
+  roundRect(ctx, bx - tw / 2 - 6, by - h / 2, tw + 12, h, h / 2);
+  ctx.fillStyle = 'rgba(47,39,33,.82)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.5)';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+  ctx.fillStyle = '#FFF8F1';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, bx, by + 0.5);
+  ctx.restore();
 }
 
 function drawPartition(p) {
@@ -1937,6 +2191,7 @@ function draw() {
     ctx.translate(0, anim.fade * 12);
   }
   hits = [];
+  lastBadges = [];
 
   drawShadowUnderRoom();
   drawFloor();
@@ -2271,9 +2526,14 @@ function renderRoomStrip(list) {
   if (!list.length) { el.innerHTML = ''; el.hidden = true; return; }
   el.hidden = false;
   el.innerHTML = list.map(a => {
-    const src = artSource(a);
+    const ps = ensurePhotos(a);
+    const src = photoSrc(ps[0], false);
+    const extra = ps.length - 1;
     return '<button class="rc" data-art="' + a.id + '" aria-label="' + esc(a.title || '작품') + ' 크게 보기">' +
+      '<span class="sh">' +
       (src ? '<img src="' + esc(src) + '" alt="" loading="lazy" />' : '<span class="ph" aria-hidden="true"></span>') +
+      (extra > 0 ? '<span class="n">+' + extra + '</span>' : '') +
+      '</span>' +
       '<b>' + esc(a.title || '(제목 없음)') + '</b></button>';
   }).join('');
 }
@@ -2306,7 +2566,8 @@ function openModal(id) {
   const m = $(id);
   if (!m) return;
   m.classList.add('on');
-  const first = m.querySelector('input:not([type=hidden]),button');
+  // 사진을 여러 장 담은 상태에서는 사진 타일 버튼이 아니라 날짜 칸부터 짚어 줍니다.
+  const first = (m.id === 'mUpload') ? m.querySelector('#fDate') : m.querySelector('input:not([type=hidden]),button');
   if (first && window.innerWidth > 700) setTimeout(() => { try { first.focus(); } catch (e) {} }, 60);
 }
 function closeModal(m) {
@@ -2317,37 +2578,163 @@ function closeModal(m) {
 function closeAll() { $$('.modal.on').forEach(m => m.classList.remove('on')); }
 
 /* ─────────────────────────── 13. 업로드 ─────────────────────────── */
-let upFile = null;
-let upImageEl = null;
 let upEditId = null;
 let upArtist = 'a1';
+let upPhotos = [];        // 이번에 저장할 사진들 (순서 = 액자 순서, 첫 장이 대표)
+let upPhotoSeq = 0;
 
 function openUpload(art) {
   if (S.mode === 'view') { toast('관람 전용 링크에서는 작품을 올릴 수 없어요'); return; }
   upEditId = art ? art.id : null;
-  upFile = null; upImageEl = null;
+  upArtist = art ? art.artist : 'a1';
+  upPhotos = [];
+  upPhotoSeq = 0;
   $('#upTitle').textContent = art ? '작품 수정' : '작품 올리기';
   $('#btnSaveArt').textContent = art ? '저장' : '걸기';
   $('#fDate').value = art ? art.date : todayStr();
   $('#fTitle').value = art ? art.title || '' : '';
   $('#fMemo').value = art ? art.memo || '' : '';
-  upArtist = art ? art.artist : 'a1';
-  const pv = $('#preview');
-  pv.removeAttribute('src');
-  const prevSrc = art ? (art.thumb || art.driveThumb || '') : '';
-  $('#drop').classList.toggle('hasimg', !!prevSrc);
-  if (prevSrc) setPreviewSrc(prevSrc);
+  if (art) {
+    ensurePhotos(art).forEach(p => {
+      const rec = {
+        key: 'e' + (++upPhotoSeq), kind: 'old', photo: p, rot: normRot(p.rot),
+        img: null, cors: false, loading: true, dirty: false, warned: false,
+        preview: photoSrc(p, false), dims: { w: p.w || 0, h: p.h || 0 }
+      };
+      upPhotos.push(rec);
+      loadEditPhoto(art, p, rec);
+    });
+  }
   syncArtistPick();
+  renderPhotoTiles();
   $('#upNote').textContent = S.sheetUrl
     ? '사진은 긴 변 1600px로 정리해 올라가고, 원본은 드라이브 폴더에 함께 저장돼요.'
     : '지금은 이 기기에만 저장돼요. 구글 시트를 연결하면 원본이 드라이브 폴더에도 저장돼요.';
   openModal('#mUpload');
 }
-function setPreviewSrc(src) {
-  const pv = $('#preview');
-  if (!src) return;
-  pv.src = src;
-  $('#drop').classList.add('hasimg');
+
+/* ── 사진 타일 (등록·수정 창) ─────────────────────────────────── */
+function renderPhotoTiles() {
+  const box = $('#upPhotos');
+  if (!box) return;
+  box.innerHTML = upPhotos.map((rec, i) => {
+    const first = i === 0;
+    const rot = normRot(rec.rot);
+    // 기기 사진·드라이브 사진은 돌린 미리보기(png/jpeg)를, 읽을 수 없는 사진만 CSS로 돌립니다.
+    const cssRot = (!rec.cors && rot) ? (' style="transform:rotate(' + rot + 'deg)"') : '';
+    const src = rec.preview || '';
+    return '<div class="ptile" data-key="' + esc(rec.key) + '">' +
+      (src ? '<img src="' + esc(src) + '" alt="' + (i + 1) + '번 사진"' + cssRot + ' data-photo-front="' + esc(rec.key) + '" />' : '') +
+      (first ? '<span class="ptag">대표</span>' : '') +
+      '<button class="pdel" data-photo-del="' + esc(rec.key) + '" aria-label="' + (i + 1) + '번 사진 빼기">✕</button>' +
+      '<div class="pbtns">' +
+        '<button data-photo-rot="-90" data-key="' + esc(rec.key) + '" aria-label="' + (i + 1) + '번 사진 왼쪽으로 90도">↺</button>' +
+        '<button data-photo-rot="90" data-key="' + esc(rec.key) + '" aria-label="' + (i + 1) + '번 사진 오른쪽으로 90도">↻</button>' +
+        (first ? '' : '<button data-photo-front="' + esc(rec.key) + '" aria-label="' + (i + 1) + '번 사진을 대표로" title="대표로">★</button>') +
+      '</div>' +
+      (rec.loading ? '<span class="pwait">불러오는 중…</span>' : '') +
+      '</div>';
+  }).join('');
+  const drop = $('#drop');
+  if (drop) drop.classList.toggle('mini', upPhotos.length > 0);
+  const cnt = $('#upPhotoCount');
+  if (cnt) cnt.textContent = upPhotos.length + ' / ' + MAX_PHOTOS;
+}
+function upRec(key) { return upPhotos.filter(r => r.key === key)[0] || null; }
+
+/* 사진 골라 담기 (여러 장 한 번에) */
+function addPhotoFiles(files) {
+  if (S.mode === 'view') return;
+  const list = (files || []).filter(f => f && (/^image\//.test(f.type || '') || /\.(jpe?g|png|webp|heic|heif|gif|bmp)$/i.test(f.name || '')));
+  if (!list.length) { toast('사진 파일을 골라 주세요'); return; }
+  const room = Math.max(0, MAX_PHOTOS - upPhotos.length);
+  if (room === 0) { toast('한 액자에는 사진 ' + MAX_PHOTOS + '장까지 담을 수 있어요'); return; }
+  if (list.length > room) toast('사진은 ' + MAX_PHOTOS + '장까지라 ' + room + '장만 담았어요');
+  list.slice(0, room).forEach(f => {
+    const rec = {
+      key: 'n' + (++upPhotoSeq), kind: 'new', file: f, rot: 0, img: null,
+      cors: true, preview: '', loading: true, dirty: true, warned: false, dims: { w: 0, h: 0 }
+    };
+    upPhotos.push(rec);
+    fileToImage(f).then(img => {
+      rec.img = img;
+      rec.loading = false;
+      refreshTilePreview(rec);
+    }).catch(() => {
+      rec.loading = false;
+      rec.failed = true;
+      renderPhotoTiles();
+      toast('사진 한 장을 읽지 못했어요 (다른 사진으로 다시 해 보세요)');
+    });
+  });
+  renderPhotoTiles();
+}
+/* 수정할 때 기존 사진을 다시 읽어 옵니다 — 회전을 픽셀에 새기려면 필요해요. */
+async function loadEditPhoto(art, p, rec) {
+  const srcs = [];
+  try { const full = await Pending.get(pendingKey(art.id, p.id)); if (full) srcs.push(full); } catch (e) {}
+  photoChain(p, true).forEach(u => { if (srcs.indexOf(u) < 0) srcs.push(u); });
+  for (const src of srcs) {
+    const img = await loadImageFrom(src, true);
+    if (img) { rec.img = img; rec.cors = true; rec.loading = false; refreshTilePreview(rec); return; }
+  }
+  for (const src of srcs) {
+    const img = await loadImageFrom(src, false);
+    if (img) { rec.img = img; rec.cors = false; rec.loading = false; refreshTilePreview(rec); return; }
+  }
+  rec.loading = false;
+  renderPhotoTiles();
+}
+function loadImageFrom(src, cors) {
+  return new Promise(res => {
+    if (!src) { res(null); return; }
+    const img = new Image();
+    if (cors && !/^data:/.test(src)) img.crossOrigin = 'anonymous';
+    let done = false;
+    const fin = ok => { if (done) return; done = true; clearTimeout(timer); res(ok ? img : null); };
+    const timer = setTimeout(() => fin(false), 8000);
+    img.onload = () => fin(true);
+    img.onerror = () => fin(false);
+    try { img.src = src; } catch (e) { fin(false); }
+  });
+}
+function refreshTilePreview(rec) {
+  if (rec.img && rec.cors) {
+    const pr = renderRotated(rec.img, rec.rot, 340, 0.68, 60000);
+    if (pr.url) { rec.preview = pr.url; rec.dims = { w: pr.w, h: pr.h }; }
+    else rec.cors = false;      // 픽셀을 읽을 수 없는 사진 — 보여 줄 때만 돌립니다
+  } else if (rec.img && !rec.preview) {
+    rec.preview = photoSrc(rec.photo, false);
+  }
+  renderPhotoTiles();
+}
+function rotateUpPhoto(key, dir) {
+  const rec = upRec(key);
+  if (!rec) return;
+  if (rec.loading) { toast('사진을 불러오는 중이에요 · 잠깐만요'); return; }
+  rec.rot = normRot(rec.rot + (parseInt(dir, 10) || 90));
+  rec.dirty = true;
+  if (rec.img && rec.cors) refreshTilePreview(rec);
+  else renderPhotoTiles();
+  if (rec.img && !rec.cors && !rec.warned) {
+    rec.warned = true;
+    toast('이 사진은 회전을 사진 자체에 새기지 못해 보여 줄 때만 돌려요');
+  }
+}
+function deleteUpPhoto(key) {
+  const i = upPhotos.map(r => r.key).indexOf(key);
+  if (i < 0) return;
+  upPhotos.splice(i, 1);
+  renderPhotoTiles();
+  if (!upPhotos.length) toast('사진을 모두 뺐어요 · 다시 골라 주세요');
+}
+function setFrontPhoto(key) {
+  const i = upPhotos.map(r => r.key).indexOf(key);
+  if (i <= 0) return;
+  const rec = upPhotos.splice(i, 1)[0];
+  upPhotos.unshift(rec);
+  renderPhotoTiles();
+  toast('이 사진을 액자에 걸리는 대표 사진으로 했어요');
 }
 function syncArtistPick() {
   $$('#artistPick button').forEach(b => b.classList.toggle('on', b.dataset.artist === upArtist));
@@ -2359,53 +2746,87 @@ async function saveArtwork() {
   const date = $('#fDate').value || todayStr();
   const title = $('#fTitle').value.trim();
   const memo = $('#fMemo').value.trim();
-  if (!upEditId && !upFile) { toast('작품 사진을 먼저 골라 주세요'); return; }
   if (!title) { toast('제목을 적어 주세요'); $('#fTitle').focus(); return; }
+  const recs = upPhotos.slice(0, MAX_PHOTOS);
+  if (!recs.length) { toast('작품 사진을 먼저 골라 주세요'); return; }
+  if (recs.some(r => r.loading)) { toast('사진을 불러오는 중이에요 · 잠깐만요'); return; }
 
   const btn = $('#btnSaveArt');
   btn.disabled = true;
   btn.textContent = '저장 중…';
   try {
-    if (upEditId) {
-      const art = S.artworks.filter(a => a.id === upEditId)[0];
-      if (!art) throw new Error('작품을 찾지 못했습니다');
-      art.date = date; art.artist = upArtist; art.title = title; art.memo = memo;
-      art.updatedAt = nowISO();
-      if (upFile) {
-        const prep = await prepareUpload(upFile);
-        art.thumb = prep.thumb;
-        if (S.sheetUrl && !S.demo) {
-          try {
-            const r = await uploadOriginal(prep.full, art);
-            if (r) { art.driveFileId = r.fileId; art.driveUrl = r.url; art.driveThumb = r.thumbUrl; }
-            else await Pending.put(art.id, prep.full);
-          } catch (e) { await Pending.put(art.id, prep.full); }
-        } else {
-          await Pending.put(art.id, prep.full);
-        }
+    const existing = upEditId ? S.artworks.filter(a => a.id === upEditId)[0] : null;
+    const art = existing || {
+      id: uid(), date: date, artist: upArtist, title: title, memo: memo,
+      thumb: '', driveFileId: '', driveUrl: '', driveThumb: '', photos: [],
+      createdAt: nowISO(), updatedAt: nowISO()
+    };
+    art.date = date; art.artist = upArtist; art.title = title; art.memo = memo;
+    art.updatedAt = nowISO();
+
+    // 1) 사진마다 저장할 모양을 만듭니다 (돌린 사진은 새 픽셀로).
+    const out = [];              // 최종 photos 배열
+    const uploads = [];          // 새로 드라이브에 올릴 사진 {pi, full}
+    let blocked = 0;
+    for (let i = 0; i < recs.length; i++) {
+      const rec = recs[i];
+      if (rec.kind === 'old' && !rec.dirty) {
+        const p = Object.assign({}, rec.photo);
+        p.rot = normRot(p.rot);
+        out.push(p);
+        continue;
       }
-    } else {
-      const prep = await prepareUpload(upFile);
-      const art = {
-        id: uid(), date: date, artist: upArtist, title: title, memo: memo,
-        thumb: prep.thumb, driveFileId: '', driveUrl: '', driveThumb: '',
-        createdAt: nowISO(), updatedAt: nowISO()
+      const base = (rec.kind === 'old' ? rec.photo : null) || {};
+      const p = {
+        id: base.id || ('p' + (i + 1) + '-' + Math.random().toString(36).slice(2, 6)),
+        fileId: base.fileId || '', url: base.url || '', thumbUrl: base.thumbUrl || '',
+        thumb: base.thumb || '', w: base.w || 0, h: base.h || 0, rot: normRot(base.rot)
       };
-      if (S.sheetUrl && !S.demo) {
-        setSync('wait', '원본 올리는 중…');
-        try {
-          const r = await uploadOriginal(prep.full, art);
-          if (r) { art.driveFileId = r.fileId; art.driveUrl = r.url; art.driveThumb = r.thumbUrl; setSync('on', '시트에 저장됨'); }
-          else { await Pending.put(art.id, prep.full); }
-        } catch (e) {
-          await Pending.put(art.id, prep.full);
-          setSync('err', '원본은 이 기기에 보관');
+      if (rec.img) {
+        const baked = bakePhoto(rec.img, rec.rot);
+        if (baked.thumb) {
+          p.thumb = baked.thumb; p.w = baked.w; p.h = baked.h; p.rot = 0;
+          if (rec.kind === 'old') { p.fileId = ''; p.url = ''; p.thumbUrl = ''; }   // 새 픽셀 → 드라이브에도 다시
+          if (baked.full) uploads.push({ pi: out.length, full: baked.full });
+        } else {
+          p.rot = normRot(rec.rot);      // 픽셀을 새기지 못한 사진 — 보여 줄 때 돌립니다
+          blocked++;
         }
-      } else {
-        await Pending.put(art.id, prep.full);
+      } else if (rec.kind === 'new') {
+        continue;                        // 아직 못 읽은 사진은 건너뜁니다
       }
-      S.artworks.push(art);
+      out.push(p);
     }
+    if (!out.length) { toast('사진을 불러오지 못했어요 · 다시 골라 주세요'); return; }
+
+    // 2) 새 사진 원본을 드라이브에 올립니다 (한 번에 보내고, 안 되면 한 장씩).
+    if (uploads.length) {
+      if (S.sheetUrl && !S.demo) {
+        setSync('wait', '원본 ' + uploads.length + '장 올리는 중…');
+        let files = null;
+        try { files = await uploadPhotos(uploads.map(u => u.full), art); } catch (e) { files = null; }
+        uploads.forEach((u, k) => {
+          const p = out[u.pi];
+          const r = files && files[k];
+          if (r && r.fileId) { p.fileId = r.fileId; p.url = r.url || ''; p.thumbUrl = r.thumbUrl || ''; }
+          else Pending.put(pendingKey(art.id, p.id), u.full);
+        });
+        setSync('on', '시트에 저장됨');
+      } else {
+        uploads.forEach(u => Pending.put(pendingKey(art.id, out[u.pi].id), u.full));
+      }
+    }
+
+    // 3) 빼 버린 사진의 임시 원본을 정리합니다 (드라이브 사진은 지우지 않아요).
+    if (existing) {
+      const keep = out.map(p => p.id);
+      (existing.photos || []).forEach(p => { if (keep.indexOf(p.id) < 0) Pending.del(pendingKey(art.id, p.id)); });
+    }
+
+    art.photos = out;
+    syncPrimary(art);
+    if (!existing) S.artworks.push(art);
+
     S.view.year = yearOf(date);
     S.view.room = quarterOf(date);
     S.view.artist = 'all';
@@ -2413,9 +2834,11 @@ async function saveArtwork() {
     saveLocal();
     spawnChar();
     closeModal('#mUpload');
+    upPhotos = [];
     renderChrome();
     if (S.sheetUrl) schedulePush(300);
-    toast(upEditId ? '작품을 고쳤어요' : '작품을 걸었어요');
+    if (blocked) toast('사진 ' + blocked + '장은 회전을 사진 자체에 새기지 못해 보여 줄 때만 돌려요');
+    else toast(existing ? '작품을 고쳤어요' : (out.length > 1 ? '사진 ' + out.length + '장을 걸었어요' : '작품을 걸었어요'));
   } catch (err) {
     toast('저장하지 못했습니다: ' + (err && err.message ? err.message : err));
   } finally {
@@ -2423,12 +2846,37 @@ async function saveArtwork() {
     btn.textContent = upEditId ? '저장' : '걸기';
   }
 }
-function prepareUpload(file) {
-  return fileToImage(file).then(img => {
-    const thumb = resizeDataURL(img, THUMB_MAX_SIDE, THUMB_QUALITY, 48000);
-    const full = resizeDataURL(img, 1600, 0.86, 900000);
-    return { thumb: thumb, full: full };
-  });
+
+/* 사진 여러 장을 드라이브에 저장합니다.
+   새 백엔드(v1.1.0)는 한 번에 여러 장(images)을 받고,
+   예전 백엔드(v1.0.0)만 연결돼 있으면 사진마다 따로 보냅니다. */
+async function uploadPhotos(fulls, art) {
+  const year = yearOf(art.date), room = quarterOf(art.date);
+  const meta = {
+    action: 'upload', app: 'kidsgallery', version: APP_VERSION,
+    date: art.date, year: year, room: room, artist: art.artist, title: art.title || ''
+  };
+  // 백엔드가 v1.0.0 이라고 이미 알고 있으면 여러 장 묶음을 시도하지 않습니다.
+  const batchOK = !(S.backendVersion && S.backendVersion < '1.1.0');
+  if (fulls.length > 1 && batchOK) {
+    try {
+      const res = await postJSON(Object.assign({ images: fulls }, meta), 30000 + 25000 * fulls.length);
+      if (res && res.ok && Array.isArray(res.files)) {
+        return fulls.map((f, i) => {
+          const r = res.files[i] || {};
+          return { fileId: r.fileId || '', url: r.url || '', thumbUrl: r.thumbUrl || '' };
+        });
+      }
+    } catch (e) { /* 옛 백엔드 — 한 장씩 */ }
+  }
+  const out = [];
+  for (const full of fulls) {
+    try {
+      const r = await uploadOriginal(full, art);
+      out.push({ fileId: r.fileId || '', url: r.url || '', thumbUrl: r.thumbUrl || '' });
+    } catch (e) { out.push({ fileId: '', url: '', thumbUrl: '' }); }
+  }
+  return out;
 }
 async function uploadOriginal(fullDataUrl, art) {
   const year = yearOf(art.date), room = quarterOf(art.date);
@@ -2443,7 +2891,7 @@ async function uploadOriginal(fullDataUrl, art) {
 
 /* ─────────────────────────── 14. 시트 동기화 ─────────────────────────── */
 function normalizeArt(a) {
-  return {
+  const out = {
     id: String(a.id || uid()),
     date: String(a.date || '').slice(0, 10),
     artist: a.artist === 'a2' ? 'a2' : 'a1',
@@ -2456,6 +2904,37 @@ function normalizeArt(a) {
     createdAt: a.createdAt || nowISO(),
     updatedAt: a.updatedAt || a.createdAt || nowISO()
   };
+  const ps = parsePhotos(a.photos);
+  if (ps) {
+    out.photos = ps;
+  } else if (out.thumb || out.driveThumb || out.driveFileId || out.driveUrl) {
+    out.photos = [normPhoto({ id: 'p1', driveFileId: out.driveFileId, driveUrl: out.driveUrl, driveThumb: out.driveThumb, thumb: out.thumb }, 0)];
+  } else {
+    out.photos = [];
+  }
+  if (out.photos[0] && !out.photos[0].thumb && out.thumb) out.photos[0].thumb = out.thumb;
+  syncPrimary(out);
+  if (!out.thumb && a.thumb) out.thumb = a.thumb;
+  return out;
+}
+/* 사진 목록 병합 — 같은 사진(같은 id)은 빈 값만 서로 채워 넣습니다. */
+function mergePhotoLists(primary, secondary) {
+  const byId = new Map();
+  (secondary || []).forEach(p => { if (p && p.id) byId.set(p.id, p); });
+  const list = (primary && primary.length) ? primary : (secondary || []);
+  return list.map(p => {
+    const o = byId.get(p.id) || {};
+    return {
+      id: p.id || o.id,
+      fileId: p.fileId || o.fileId || '',
+      url: p.url || o.url || '',
+      thumbUrl: p.thumbUrl || o.thumbUrl || '',
+      thumb: p.thumb || o.thumb || '',
+      w: p.w || o.w || 0,
+      h: p.h || o.h || 0,
+      rot: normRot(p.rot || o.rot || 0)
+    };
+  });
 }
 function mergeArtworks(local, remote) {
   const map = new Map();
@@ -2472,6 +2951,10 @@ function mergeArtworks(local, remote) {
     merged.driveUrl = merged.driveUrl || l.driveUrl || r.driveUrl;
     merged.title = merged.title || l.title || r.title;
     merged.memo = merged.memo || l.memo || r.memo;
+    merged.photos = mergePhotoLists(newerRemote ? (r.photos || []) : (l.photos || []), newerRemote ? (l.photos || []) : (r.photos || []));
+    if (merged.photos[0] && !merged.photos[0].thumb && merged.thumb) merged.photos[0].thumb = merged.thumb;
+    syncPrimary(merged);
+    if (!merged.thumb) merged.thumb = l.thumb || r.thumb || '';
     map.set(r.id, merged);
   });
   return Array.from(map.values()).filter(a => a.date).sort((a, b) => String(a.date).localeCompare(String(b.date)));
@@ -2491,6 +2974,12 @@ function pushSave() {
     artworks: S.artworks.map(a => ({
       id: a.id, date: a.date, artist: a.artist, title: a.title, memo: a.memo,
       driveFileId: a.driveFileId || '', driveUrl: a.driveUrl || '', thumbUrl: a.driveThumb || '',
+      photos: (a.photos || []).map(p => ({
+        id: p.id, fileId: p.fileId || '', url: p.url || '', thumbUrl: p.thumbUrl || '',
+        // 드라이브에 아직 없는 사진만 작은 미리보기를 시트에 함께 넣어 둘을 잃지 않게 합니다.
+        thumb: (!p.fileId && !p.thumbUrl) ? (p.thumb || '') : '',
+        w: p.w || 0, h: p.h || 0, rot: p.rot || 0
+      })),
       createdAt: a.createdAt, updatedAt: a.updatedAt
     }))
   };
@@ -2516,6 +3005,7 @@ async function connectSheet(url, silent) {
     if (!res || res.ok !== true) throw new Error((res && res.error) || '연결 확인 실패');
     const data = await jsonp('load', '');
     if (!data || data.ok !== true) throw new Error((data && data.error) || '불러오기 실패');
+    S.backendVersion = String(data.version || res.version || '');
     const remoteArts = Array.isArray(data.artworks) ? data.artworks.map(normalizeArt) : [];
     S.artworks = mergeArtworks(S.artworks, remoteArts);
     if (data.settings && typeof data.settings === 'object') {
@@ -2545,14 +3035,19 @@ async function flushPending() {
   if (!S.sheetUrl || S.demo || S.mode === 'view') return;
   const items = await Pending.all();
   for (const it of items) {
-    const art = S.artworks.filter(a => a.id === it.id)[0];
+    const k = splitKey(it.id);
+    const art = S.artworks.filter(a => a.id === k.artId)[0];
     if (!art) { await Pending.del(it.id); continue; }
-    if (art.driveFileId) { await Pending.del(it.id); continue; }
+    const ps = ensurePhotos(art);
+    const p = (k.photoId ? ps.filter(x => x.id === k.photoId)[0] : ps[0]) || ps[0];
+    if (!p) { await Pending.del(it.id); continue; }
+    if (p.fileId) { await Pending.del(it.id); continue; }
     try {
       const r = await uploadOriginal(it.data, art);
       if (r) {
-        art.driveFileId = r.fileId; art.driveUrl = r.url; art.driveThumb = r.thumbUrl;
+        p.fileId = r.fileId; p.url = r.url || p.url; p.thumbUrl = r.thumbUrl || p.thumbUrl;
         art.updatedAt = nowISO();
+        syncPrimary(art);
         await Pending.del(it.id);
       }
     } catch (e) { /* 다음 기회에 */ }
@@ -2565,6 +3060,7 @@ async function autoConnect() {
   try {
     const data = await jsonp('load', '');
     if (data && data.ok) {
+      S.backendVersion = String(data.version || '');
       const remoteArts = Array.isArray(data.artworks) ? data.artworks.map(normalizeArt) : [];
       S.artworks = mergeArtworks(S.artworks, remoteArts);
       if (data.settings && typeof data.settings === 'object') {
@@ -2610,6 +3106,11 @@ function exportJSON() {
       id: a.id, date: a.date, year: yearOf(a.date), room: quarterOf(a.date),
       artist: a.artist, title: a.title, memo: a.memo,
       driveFileId: a.driveFileId, driveUrl: a.driveUrl, thumbUrl: a.driveThumb,
+      // 사진 여러 장 — 첫 장이 대표(driveFileId·thumbUrl)이고, 백업에는 사진마다의 정보를 넣습니다.
+      photos: ensurePhotos(a).map(p => ({
+        id: p.id, fileId: p.fileId || '', url: p.url || '', thumbUrl: p.thumbUrl || '',
+        thumb: p.thumb || '', w: p.w || 0, h: p.h || 0, rot: p.rot || 0
+      })),
       createdAt: a.createdAt, updatedAt: a.updatedAt
     }))
   };
@@ -2618,13 +3119,18 @@ function exportJSON() {
 }
 function csvCell(v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }
 function exportCSV() {
-  const head = ['id', '전시날짜', '연도', '전시실', '작가', '제목', '메모', '드라이브파일ID', '드라이브링크', '썸네일링크', '등록일'];
+  const head = ['id', '전시날짜', '연도', '전시실', '작가', '제목', '메모', '드라이브파일ID', '드라이브링크', '썸네일링크', '사진수', '사진목록', '등록일'];
   const real = S.artworks.filter(a => !a.demo);
   if (!real.length) { toast('내보낼 실제 작품이 없어요'); return; }
-  const rows = real.slice().sort((a, b) => String(a.date).localeCompare(String(b.date))).map(a => [
-    a.id, a.date, yearOf(a.date), quarterOf(a.date) + '실', artistLabel(a.artist), a.title, a.memo,
-    a.driveFileId || '', a.driveUrl || '', a.driveThumb || '', a.createdAt || ''
-  ]);
+  const rows = real.slice().sort((a, b) => String(a.date).localeCompare(String(b.date))).map(a => {
+    const ps = ensurePhotos(a);
+    return [
+      a.id, a.date, yearOf(a.date), quarterOf(a.date) + '실', artistLabel(a.artist), a.title, a.memo,
+      a.driveFileId || '', a.driveUrl || '', a.driveThumb || '',
+      ps.length, JSON.stringify(ps.map(p => ({ fileId: p.fileId || '', thumbUrl: p.thumbUrl || '', w: p.w || 0, h: p.h || 0, rot: p.rot || 0 }))),
+      a.createdAt || ''
+    ];
+  });
   const csv = '\ufeff' + [head].concat(rows).map(r => r.map(csvCell).join(',')).join('\r\n');
   download('가족미술관-목록-' + stamp() + '.csv', csv, 'text/csv;charset=utf-8');
   toast('CSV 목록을 내려받았어요');
@@ -2656,10 +3162,12 @@ function importJSON(file) {
 /* ─────────────────────────── 16. 작품 보기 ─────────────────────────── */
 let artOrder = [];
 let artIndex = 0;
-function openArtwork(id, list) {
+let artPhotoIdx = 0;
+function openArtwork(id, list, photoIdx) {
   const src = (list && list.length) ? list : roomWorks(S.view.year, S.view.room, S.view.artist, 'asc');
   artOrder = src.map(a => a.id);
   artIndex = Math.max(0, artOrder.indexOf(id));
+  artPhotoIdx = Math.max(0, parseInt(photoIdx, 10) || 0);
   renderArtwork();
   openModal('#mArt');
   hideHint();
@@ -2668,16 +3176,18 @@ function currentArt() {
   const id = artOrder[artIndex];
   return S.artworks.filter(a => a.id === id)[0] || null;
 }
+function artPhotos(a) { return a ? ensurePhotos(a) : []; }
 function renderArtwork() {
   const a = currentArt();
   if (!a) { closeModal('#mArt'); return; }
+  const ps = artPhotos(a);
+  if (artPhotoIdx >= ps.length) artPhotoIdx = 0;
+  const p = ps[artPhotoIdx] || null;
   const img = $('#artImg');
-  const view = $('.artview');
+  const view = $('#artView') || $('.artview');
   $$('.artview .ph').forEach(n => n.remove());
   // 큰 화면용: 드라이브 원본 → 기기 미리보기 순서로 시도합니다.
-  const chain = [];
-  if (a.driveFileId) chain.push('https://lh3.googleusercontent.com/d/' + a.driveFileId + '=w1600');
-  [artSource(a), a.driveThumb].forEach(u => { if (u && chain.indexOf(u) < 0) chain.push(u); });
+  const chain = photoChain(p, true);
   img.onerror = null;
   if (!chain.length) {
     img.removeAttribute('src'); img.style.display = 'none';
@@ -2695,12 +3205,38 @@ function renderArtwork() {
     img.src = chain[0];
   }
   img.alt = a.title || '작품';
+  // 픽셀에 회전을 새기지 못한 사진은 보여 줄 때만 돌립니다.
+  const r = normRot(p && p.rot);
+  img.classList.toggle('rot90', r === 90);
+  img.classList.toggle('rot180', r === 180);
+  img.classList.toggle('rot270', r === 270);
   $('#artArtist').textContent = artistLabel(a.artist);
   $('#artDate').textContent = fmtDate(a.date) + ' · ' + quarterOf(a.date) + '실 (' + ROOMS[quarterOf(a.date) - 1].label + ')';
   $('#artDate').title = a.date;
   $('#artPos').textContent = (artIndex + 1) + ' / ' + artOrder.length;
   $('#artTitle').textContent = a.title || '(제목 없음)';
   $('#artMemo').textContent = a.memo || '';
+  const many = ps.length > 1;
+  const pc = $('#artPhotoCount');
+  if (pc) { pc.hidden = !many; pc.textContent = many ? ('📷 사진 ' + ps.length + '장') : ''; }
+  const bar = $('#artPhotoBar');
+  if (bar) {
+    bar.hidden = !many;
+    if (many) {
+      $('#photoPos').textContent = (artPhotoIdx + 1) + ' / ' + ps.length;
+      $('#photoPrev').disabled = artPhotoIdx <= 0;
+      $('#photoNext').disabled = artPhotoIdx >= ps.length - 1;
+    }
+  }
+  const thumbs = $('#artThumbs');
+  if (thumbs) {
+    thumbs.hidden = !many;
+    thumbs.innerHTML = many ? ps.map((q, i) =>
+      '<button data-photo-jump="' + i + '" class="' + (i === artPhotoIdx ? 'on' : '') + '" aria-label="' + (i + 1) + '번 사진' + (i === 0 ? ' (대표)' : '') + '">' +
+      '<img src="' + esc(photoSrc(q, false)) + '" alt="" loading="lazy" /></button>').join('') : '';
+    const on = thumbs.querySelector('button.on');
+    if (on && on.scrollIntoView) { try { on.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch (e) {} }
+  }
   const first = artIndex <= 0, last = artIndex >= artOrder.length - 1;
   $('#artPrev').disabled = first;
   $('#artNext').disabled = last;
@@ -2716,6 +3252,16 @@ function stepArt(d) {
   const n = artIndex + d;
   if (n < 0 || n >= artOrder.length) return;
   artIndex = n;
+  artPhotoIdx = 0;
+  renderArtwork();
+}
+function stepPhoto(d) {
+  const a = currentArt();
+  if (!a) return;
+  const ps = artPhotos(a);
+  const n = artPhotoIdx + d;
+  if (n < 0 || n >= ps.length) return;
+  artPhotoIdx = n;
   renderArtwork();
 }
 
@@ -2726,22 +3272,63 @@ function albumList() {
   }
   return roomWorks(S.view.year, S.view.room, S.view.artist, 'asc');
 }
-function bigImageSrc(a) {
+function bigImageSrc(a, pi) {
+  const ps = ensurePhotos(a);
+  const p = ps[pi || 0] || ps[0];
+  if (p) return photoSrc(p, true);
   if (a.driveFileId) return 'https://lh3.googleusercontent.com/d/' + a.driveFileId + '=w1600';
   return artSource(a) || '';
 }
+const albumPhotoIdx = {};   // 앨범 카드에서 지금 보고 있는 사진 번호(작품 id별)
 function albumCardHtml(a) {
-  const src = bigImageSrc(a);
-  const fb = artSource(a);
-  return '<button class="acard" data-art="' + a.id + '">' +
+  const ps = ensurePhotos(a);
+  const idx = Math.min(albumPhotoIdx[a.id] || 0, Math.max(0, ps.length - 1));
+  const p = ps[idx] || null;
+  const src = photoSrc(p, true);
+  const fb = (p && p.thumb) || '';
+  const many = ps.length > 1;
+  const r = normRot(p && p.rot);
+  return '<div class="acell">' +
+    '<button class="acard" data-art="' + a.id + '">' +
     '<span class="shot">' + (src
-      ? '<img src="' + esc(src) + '" alt="" loading="lazy"' + (fb && fb !== src ? ' data-fb="' + esc(fb) + '"' : '') + ' />'
-      : '') + '</span>' +
+      ? '<img src="' + esc(src) + '" alt="" loading="lazy"' + (fb && fb !== src ? ' data-fb="' + esc(fb) + '"' : '') +
+        (r ? ' class="rot' + r + '"' : '') + ' />'
+      : '') +
+    (many ? '<span class="pbadge">📷 ' + ps.length + '</span>' : '') + '</span>' +
     '<span class="tx"><b>' + esc(a.title || '(제목 없음)') + '</b>' +
     '<span class="meta">' + esc(artistLabel(a.artist)) + ' · ' + esc(fmtDate(a.date)) +
-    ' · ' + quarterOf(a.date) + '실</span>' +
+    ' · ' + quarterOf(a.date) + '실' + (many ? ' · 사진 ' + ps.length + '장' : '') + '</span>' +
     (a.memo ? '<span class="memo">' + esc(a.memo) + '</span>' : '') +
-    '</span></button>';
+    '</span></button>' +
+    '<div class="mn" data-mn="' + a.id + '"' + (many ? '' : ' hidden') + '>' +
+    '<button data-card-nav="-1" data-id="' + a.id + '" aria-label="' + esc(a.title || '작품') + ' 앞 사진">‹</button>' +
+    '<span data-card-pos="' + a.id + '">' + (idx + 1) + ' / ' + Math.max(1, ps.length) + '</span>' +
+    '<button data-card-nav="1" data-id="' + a.id + '" aria-label="' + esc(a.title || '작품') + ' 다음 사진">›</button>' +
+    '</div></div>';
+}
+/* 앨범 카드에서 사진만 넘겨 봅니다(카드를 열지 않고). */
+function albumStepPhoto(id, d) {
+  const a = S.artworks.filter(x => x.id === id)[0];
+  if (!a) return;
+  const ps = ensurePhotos(a);
+  if (ps.length < 2) return;
+  let i = (albumPhotoIdx[id] || 0) + d;
+  if (i < 0) i = ps.length - 1;
+  if (i >= ps.length) i = 0;
+  albumPhotoIdx[id] = i;
+  const card = Array.prototype.filter.call(document.querySelectorAll('#albumGrid .acard'), c => c.dataset.art === id)[0];
+  if (card) {
+    const p = ps[i];
+    const src = photoSrc(p, true);
+    const img = card.querySelector('.shot img');
+    if (img && src) {
+      img.removeAttribute('data-fb');
+      img.className = normRot(p.rot) ? ('rot' + normRot(p.rot)) : '';
+      img.src = src;
+    }
+  }
+  const pos = document.querySelector('#albumGrid [data-card-pos="' + id + '"]');
+  if (pos) pos.textContent = (i + 1) + ' / ' + ps.length;
 }
 function renderAlbum() {
   const g = $('#albumGrid');
@@ -3052,13 +3639,26 @@ function bindEvents() {
     const sc = e.target.closest('#albumScope [data-scope]');
     if (sc) { S.albumScope = sc.dataset.scope; renderAlbum(); return; }
     const ac = e.target.closest('#albumGrid [data-art]');
-    if (ac) { openArtwork(ac.dataset.art, albumList()); return; }
+    if (ac) { openArtwork(ac.dataset.art, albumList(), albumPhotoIdx[ac.dataset.art] || 0); return; }
     const hb = e.target.closest('#halls [data-hall]');
     if (hb) { S.view.hall = parseInt(hb.dataset.hall, 10) || 1; saveLocal(); renderChrome(); return; }
     const rc = e.target.closest('#roomStrip [data-art]');
     if (rc) { openArtwork(rc.dataset.art); return; }
     const ap = e.target.closest('#artistPick [data-artist]');
     if (ap) { upArtist = ap.dataset.artist; syncArtistPick(); return; }
+    // 사진 타일 — 돌리기 · 대표로 · 빼기 / 앨범 카드 사진 넘기기 / 작품 창 사진 넘기기
+    const prot = e.target.closest('[data-photo-rot]');
+    if (prot) { rotateUpPhoto(prot.dataset.key, prot.dataset.photoRot); return; }
+    const pdel = e.target.closest('[data-photo-del]');
+    if (pdel) { deleteUpPhoto(pdel.dataset.photoDel); return; }
+    const pfr = e.target.closest('[data-photo-front]');
+    if (pfr) { setFrontPhoto(pfr.dataset.photoFront); return; }
+    const cnv = e.target.closest('#albumGrid [data-card-nav]');
+    if (cnv) { albumStepPhoto(cnv.dataset.id, parseInt(cnv.dataset.cardNav, 10) || 1); return; }
+    const pj = e.target.closest('#artThumbs [data-photo-jump]');
+    if (pj) { artPhotoIdx = parseInt(pj.dataset.photoJump, 10) || 0; renderArtwork(); return; }
+    if (e.target.closest('#photoPrev')) { stepPhoto(-1); return; }
+    if (e.target.closest('#photoNext')) { stepPhoto(1); return; }
 
     if (e.target.closest('#btnAdd') || e.target.closest('#emptyAdd')) { openUpload(null); return; }
     if (e.target.closest('#btnAlbum')) { setScreen('album'); return; }
@@ -3121,11 +3721,9 @@ function bindEvents() {
 
   $('#drop').addEventListener('click', () => { if (S.mode === 'view') return; $('#fileInput').click(); });
   $('#fileInput').addEventListener('change', e => {
-    const f = e.target.files && e.target.files[0];
-    if (!f) return;
-    upFile = f;
-    const url = URL.createObjectURL(f);
-    setPreviewSrc(url);
+    const files = Array.prototype.slice.call(e.target.files || []);
+    e.target.value = '';        // 같은 사진을 다시 골라도 담기게
+    if (files.length) addPhotoFiles(files);
   });
   $('#importInput').addEventListener('change', e => {
     const f = e.target.files && e.target.files[0];
@@ -3134,10 +3732,35 @@ function bindEvents() {
   });
   $$('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(m); }));
 
+  // 작품 창 — 좌우로 밀으면 그 작품의 사진이 넘어갑니다 (여러 장일 때)
+  (function () {
+    const av = $('#artView');
+    if (!av) return;
+    let sx = 0, sy = 0, st = 0;
+    av.addEventListener('touchstart', e => {
+      if (!e.touches || e.touches.length !== 1) return;
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now();
+    }, { passive: true });
+    av.addEventListener('touchend', e => {
+      const t = e.changedTouches && e.changedTouches[0];
+      if (!t || !st) return;
+      const dx = t.clientX - sx, dy = t.clientY - sy, dt = Date.now() - st;
+      st = 0;
+      if (dt > 900) return;
+      if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy) * 1.4) stepPhoto(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
+
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       if ($('.modal.on')) { closeAll(); return; }
       if (S.screen === 'album') { setScreen('museum'); return; }
+      return;
+    }
+    // 작품을 크게 본 상태에서는 좌우 방향키로 그 작품의 사진을 넘깁니다.
+    if ($('#mArt').classList.contains('on')) {
+      if (e.key === 'ArrowLeft') { stepPhoto(-1); e.preventDefault(); return; }
+      if (e.key === 'ArrowRight') { stepPhoto(1); e.preventDefault(); return; }
       return;
     }
     if ($('.modal.on')) return;
@@ -3225,6 +3848,7 @@ function deleteCurrent() {
   if (!a) return;
   if (!confirm('「' + (a.title || '이 작품') + '」을(를) 목록에서 지울까요?\n드라이브 원본 사진은 지워지지 않습니다.')) return;
   S.artworks = S.artworks.filter(x => x.id !== a.id);
+  ensurePhotos(a).forEach(p => Pending.del(pendingKey(a.id, p.id)));
   Pending.del(a.id);
   saveLocal();
   artOrder = artOrder.filter(id => id !== a.id);
@@ -3347,6 +3971,47 @@ function init() {
       count: document.querySelectorAll('#albumGrid .acard').length,
       heads: Array.prototype.map.call(document.querySelectorAll('#albumGrid .acard .tx b'), n => n.textContent)
     }),
+    /* 사진 여러 장 · 회전 — 검증용 읽기 전용 훅 */
+    photos: () => roomWorks(S.view.year, S.view.room, S.view.artist, 'asc').map(a => ({
+      id: a.id, title: a.title, n: photoCount(a), extra: Math.max(0, photoCount(a) - 1),
+      dims: [(firstPhoto(a) || {}).w || 0, (firstPhoto(a) || {}).h || 0],
+      rot: (firstPhoto(a) || {}).rot || 0,
+      kinds: ensurePhotos(a).map(p => p.thumb ? 'local' : (p.fileId ? 'drive' : (p.thumbUrl ? 'url' : '')))
+    })),
+    allPhotos: () => S.artworks.map(a => ({
+      id: a.id, title: a.title, date: a.date,
+      primary: { thumb: !!a.thumb, fileId: a.driveFileId || '', thumbUrl: a.driveThumb || '' },
+      photos: ensurePhotos(a).map(p => ({ id: p.id, thumb: !!p.thumb, fileId: p.fileId || '', thumbUrl: p.thumbUrl || '', w: p.w || 0, h: p.h || 0, rot: p.rot || 0 }))
+    })),
+    photoState: () => ({
+      artIdx: artIndex, photoIdx: artPhotoIdx, artCount: artOrder.length,
+      bar: !!$('#artPhotoBar') && !$('#artPhotoBar').hidden,
+      pos: $('#photoPos') ? $('#photoPos').textContent : '',
+      chip: $('#artPhotoCount') && !$('#artPhotoCount').hidden ? $('#artPhotoCount').textContent : '',
+      thumbs: $$('#artThumbs button').length,
+      imgSrc: ($('#artImg') && $('#artImg').getAttribute('src')) || '',
+      rotClass: ($('#artImg') && $('#artImg').className) || ''
+    }),
+    badges: () => lastBadges.map(b => ({ extra: b.extra, x: b.x, y: b.y, w: b.w, h: b.h })),
+    upState: () => ({
+      edit: upEditId, count: upPhotos.length,
+      rot: upPhotos.map(r => r.rot), keys: upPhotos.map(r => r.key),
+      loading: upPhotos.some(r => r.loading), cors: upPhotos.map(r => !!r.cors),
+      dims: upPhotos.map(r => [r.dims ? r.dims.w : 0, r.dims ? r.dims.h : 0]),
+      previews: upPhotos.map(r => !!(r.preview && r.preview.length > 40))
+    }),
+    albumPhotos: () => Array.prototype.map.call(document.querySelectorAll('#albumGrid .acell'), c => {
+      const card = c.querySelector('.acard');
+      const mn = c.querySelector('.mn');
+      return {
+        id: card ? card.dataset.art : '',
+        badge: (c.querySelector('.pbadge') || {}).textContent || '',
+        pos: (c.querySelector('[data-card-pos]') || {}).textContent || '',
+        pager: !!mn && !mn.hidden,
+        src: (c.querySelector('.shot img') || {}).src || ''
+      };
+    }),
+    pendingKeys: () => Pending.all().then(items => items.map(i => i.id)),
     frameBoxes: () => hits.map(h => ({
       id: h.id, cx: +h.cx.toFixed(1), cy: +h.cy.toFixed(1),
       w: +(Math.max.apply(null, h.poly.map(p => p.x)) - Math.min.apply(null, h.poly.map(p => p.x))).toFixed(1),
