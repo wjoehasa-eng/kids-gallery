@@ -57,7 +57,7 @@
  *  POST {action:'upload', image:'data:image/jpeg;base64,…', date, year, room, artist, title}
  *                                        원본 사진을 드라이브에 저장 → { fileId, url, thumbUrl }
  *  POST {action:'upload', images:['data:…','data:…'], date, year, room, artist, title}
- *                                        사진 여러 장을 한 번에(최대 10장) → { files:[{fileId,url,thumbUrl}, …]
+ *                                        사진 여러 장을 한 번에(최대 10장) → { files:[{fileId,url,thumbUrl}, …] }
  *                                        옛 앱(v1.0.0)이 보내는 image 한 장도 그대로 받습니다.
  *
  * ── 안전장치 ────────────────────────────────────────────────────────
